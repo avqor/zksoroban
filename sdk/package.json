@@ -15,7 +15,7 @@
     "test:golden": "tsx scripts/golden.ts"
   },
   "dependencies": {
-    "@stellar/stellar-sdk": "^16.0.1",
+    "@stellar/stellar-sdk": "^16.2.0",
     "circomlibjs": "^0.1.7",
     "ffjavascript": "^0.3.1"
   },
