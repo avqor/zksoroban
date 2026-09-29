@@ -1,4 +1,4 @@
 {
   "description": "CPU instructions verify_proof costs against the poseidon_preimage fixture in contracts/verifier/tests/cost_regression.rs, run through the real compiled wasm. Update via `make update-verifier-cost-baseline` -- see docs/performance.md.",
-  "instructions": 26720340
+  "instructions": 26897863
 }

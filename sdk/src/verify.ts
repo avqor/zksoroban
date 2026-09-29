@@ -102,7 +102,8 @@ const CONTRACT_ERROR_CODES: Record<number, SorobanZkErrorCode> = {
   2: SorobanZkErrorCode.RATE_LIMIT_EXCEEDED,
   3: SorobanZkErrorCode.INVALID_WINDOW_SIZE,
   4: SorobanZkErrorCode.PROOF_EXPIRED,
-  5: SorobanZkErrorCode.CALLER_NOT_ALLOWED
+  5: SorobanZkErrorCode.CALLER_NOT_ALLOWED,
+  11: SorobanZkErrorCode.ALREADY_USED
 };
 
 function extractContractErrorCode(message: string): SorobanZkErrorCode | undefined {
