@@ -74,11 +74,16 @@ The SDK has three responsibilities:
 - `proof.ts`: convert `snarkjs` proof JSON into the exact BN254 byte layout expected by the contract
 - `verify.ts`: build, submit, and decode the Soroban verifier transaction
 
+A fourth, `serialize.ts`, handles a related but distinct concern: a
+compact, versioned binary format for storing or transporting a raw
+snarkjs proof — see [docs/proof-format.md](proof-format.md#storagetransport-serialization).
+
 Public API:
 
 - `poseidon(inputs: bigint[]): bigint`
 - `formatProof(proof, publicSignals): SorobanProofCalldata`
 - `formatVerifyingKey(vk): RegistryVerifyingKey`
+- `serializeProof(proof, publicSignals): Uint8Array` / `deserializeProof(bytes): { proof, publicSignals }`
 - `verifyOnChain(opts): Promise<VerifyResult>` — `contracts/verifier`, signed transaction
 - `verifyViaRegistry(opts): Promise<boolean>` — `contracts/registry`, simulation-only
 - `verifyBatchOnChain(opts): Promise<VerifyBatchResult>` — `contracts/verifier`, batched, signed transaction

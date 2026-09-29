@@ -239,7 +239,13 @@ export enum SorobanZkErrorCode {
   // Witness/proof computation itself failed (e.g. a wasm/zkey mismatch, or an
   // input that doesn't satisfy the circuit's constraints) — distinct from
   // INVALID_PROOF_FORMAT, which is about a proof's on-the-wire shape.
-  PROOF_GENERATION_FAILED = "PROOF_GENERATION_FAILED"
+  PROOF_GENERATION_FAILED = "PROOF_GENERATION_FAILED",
+  // deserializeProof (zksoroban#33) errors. Split from INVALID_PROOF_FORMAT
+  // so a caller can tell "this came from an incompatible SDK version" apart
+  // from "this data is just garbage/truncated" — a real, actionable
+  // difference for an application deciding how to react.
+  SERIALIZED_PROOF_VERSION_MISMATCH = "SERIALIZED_PROOF_VERSION_MISMATCH",
+  CORRUPTED_SERIALIZED_PROOF = "CORRUPTED_SERIALIZED_PROOF"
 }
 
 export class SorobanZkError extends Error {

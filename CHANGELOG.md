@@ -18,6 +18,13 @@ sense.
 
 ### Added
 
+- **sdk**: `serializeProof`/`deserializeProof` (`sdk/src/serialize.ts`) —
+  a compact, versioned binary format for storing a raw snarkjs proof and
+  its public signals or sending them over a network, distinct from
+  `formatProof`'s Soroban-calldata encoding. Round-trips the full proof
+  shape losslessly; rejects an unrecognized version or a corrupted/
+  truncated byte array with a typed error. See
+  `docs/proof-format.md`'s "Storage/Transport Serialization" section (#33).
 - **contracts**: timelocked verifying-key updates on `contracts/verifier`
   — `propose_vk_update`/`execute_vk_update` replace the old immediate
   `update_vk`, with a `vk_update_delay` (in ledgers, fixed at
