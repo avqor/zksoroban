@@ -11,7 +11,7 @@ import test from "node:test";
 import { BASE_FEE, Keypair, xdr } from "@stellar/stellar-sdk";
 
 import { estimateVerifyFee } from "../src/verify";
-import { SorobanZkError, SorobanZkErrorCode, VerifyOptions } from "../src/types";
+import { SorobanZkError, SorobanZkErrorCode, TESTNET, VerifyOptions } from "../src/types";
 
 import * as stellarSdk from "@stellar/stellar-sdk";
 
@@ -58,8 +58,7 @@ function buildStub(simResult: object, capturedArgs: { args?: xdr.ScVal[] } = {})
 }
 
 const DEFAULT_OPTS: VerifyOptions = {
-  rpcUrl: "http://localhost:8000",
-  contractId: "CBL6MAWJALQP25LYKUUOC34K464XPSF6BLKUW6MXZDEXEDXMQUSP7HNN",
+  network: TESTNET,
   keypair: STUB_KEYPAIR,
   calldata: {
     proofA: Buffer.alloc(64, 1),

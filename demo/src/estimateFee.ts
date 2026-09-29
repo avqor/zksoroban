@@ -15,14 +15,11 @@
 import { randomBytes } from "node:crypto";
 import path from "node:path";
 
-import { Keypair, Networks } from "@stellar/stellar-sdk";
+import { Keypair } from "@stellar/stellar-sdk";
 
-import { ProofBundle, estimateVerifyFee, poseidon, verifyOnChain } from "@zksoroban/sdk";
+import { ProofBundle, TESTNET, estimateVerifyFee, poseidon, verifyOnChain } from "@zksoroban/sdk";
 
 const snarkjs: any = require("snarkjs");
-
-const TESTNET_CONTRACT_ID = "CBL6MAWJALQP25LYKUUOC34K464XPSF6BLKUW6MXZDEXEDXMQUSP7HNN";
-const RPC_URL = "https://soroban-testnet.stellar.org";
 
 function requireEnv(name: string): string {
   const value = process.env[name];
@@ -63,10 +60,10 @@ async function main(): Promise<void> {
     publicSignals,
     circuit: "poseidon_preimage",
     generatedAt: new Date().toISOString(),
-    networkPassphrase: Networks.TESTNET
+    networkPassphrase: TESTNET.networkPassphrase
   };
 
-  const opts = { rpcUrl: RPC_URL, contractId: TESTNET_CONTRACT_ID, keypair, bundle };
+  const opts = { network: TESTNET, keypair, bundle };
 
   console.log("\n=== Step 1: estimate the fee (simulateTransaction — nothing submitted) ===");
   const { stroops, xlm } = await estimateVerifyFee(opts);

@@ -112,20 +112,22 @@ because the underlying contracts have genuinely different call shapes:
 | Return | `VerifyResult` (`verified`, `txHash`, `ledger`, `fee`) | Plain `boolean` |
 
 ```ts
-import { verifyViaRegistry, formatProof } from "@zksoroban/sdk";
+import { TESTNET, verifyViaRegistry, formatProof } from "@zksoroban/sdk";
 
 const calldata = formatProof(snarkjsProof, publicSignals);
 
 const verified = await verifyViaRegistry({
-  rpcUrl: "https://soroban-testnet.stellar.org",
-  registryContractId: "CDTPNARKKZCZ36PL4BNKBXZTT2BLVR373S2K5NCFAOKCPPY62ESRHSXH",
+  network: { ...TESTNET, contractId: "CDTPNARKKZCZ36PL4BNKBXZTT2BLVR373S2K5NCFAOKCPPY62ESRHSXH" },
   circuitId: 2, // range_proof
   calldata,
 });
 ```
 
-`verifyOnChain`'s existing signature and behavior are unchanged — this is
-purely additive, so existing single-circuit call sites keep working.
+`verifyOnChain` still targets `contracts/verifier` the same way it
+always has (see "Network Configuration" in `docs/architecture.md` for
+its own, separate `network: NetworkConfig` signature) — adding
+`verifyViaRegistry` alongside it didn't change what `verifyOnChain`
+does, only what else is now available.
 
 ## Adding a fifth circuit
 

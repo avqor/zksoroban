@@ -12,7 +12,12 @@ import test from "node:test";
 import { xdr } from "@stellar/stellar-sdk";
 
 import { verifyBatchViaRegistry } from "../src/verify";
-import { SorobanZkError, SorobanZkErrorCode, VerifyBatchViaRegistryOptions } from "../src/types";
+import {
+  SorobanZkError,
+  SorobanZkErrorCode,
+  TESTNET,
+  VerifyBatchViaRegistryOptions
+} from "../src/types";
 import { VALID_SNARKJS_PROOF, VALID_PUBLIC_SIGNALS } from "./fixtures";
 
 import * as stellarSdk from "@stellar/stellar-sdk";
@@ -61,8 +66,7 @@ function buildStub(simResult: object, capturedArgs: { args?: xdr.ScVal[] } = {})
 }
 
 const DEFAULT_OPTS: VerifyBatchViaRegistryOptions = {
-  rpcUrl: "http://localhost:8000",
-  registryContractId: "CDTPNARKKZCZ36PL4BNKBXZTT2BLVR373S2K5NCFAOKCPPY62ESRHSXH",
+  network: { ...TESTNET, contractId: "CDTPNARKKZCZ36PL4BNKBXZTT2BLVR373S2K5NCFAOKCPPY62ESRHSXH" },
   items: [
     { circuitId: 1, proof: VALID_SNARKJS_PROOF, publicSignals: VALID_PUBLIC_SIGNALS },
     { circuitId: 2, proof: VALID_SNARKJS_PROOF, publicSignals: VALID_PUBLIC_SIGNALS }

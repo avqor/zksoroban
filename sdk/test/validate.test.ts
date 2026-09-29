@@ -133,8 +133,11 @@ test("verifyOnChain validates calldata before any network call", async () => {
   await assert.rejects(
     () =>
       verifyOnChain({
-        rpcUrl: "http://127.0.0.1:1",
-        contractId: "CBL6MAWJALQP25LYKUUOC34K464XPSF6BLKUW6MXZDEXEDXMQUSP7HNN",
+        network: {
+          rpcUrl: "http://127.0.0.1:1",
+          networkPassphrase: "Test SDF Network ; September 2015",
+          contractId: "CBL6MAWJALQP25LYKUUOC34K464XPSF6BLKUW6MXZDEXEDXMQUSP7HNN"
+        },
         keypair: Keypair.random(),
         calldata
       }),

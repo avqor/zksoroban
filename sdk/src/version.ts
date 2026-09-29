@@ -1,28 +1,34 @@
 import { Account, Contract, Keypair, TransactionBuilder, rpc, scValToNative } from "@stellar/stellar-sdk";
 
 import { withRetry } from "./retry.js";
-import { RetryOptions, SorobanZkError, SorobanZkErrorCode } from "./types.js";
+import { NetworkConfig, NetworkMismatchError, RetryOptions, SorobanZkError, SorobanZkErrorCode } from "./types.js";
 
 const EXPECTED_CONTRACT_VERSION = "0.1.0";
 
 export async function getContractVersion(
-  contractId: string,
-  rpcUrl: string,
+  network: NetworkConfig,
   retry?: RetryOptions
 ): Promise<string> {
   try {
     const server = withRetry(
-      new rpc.Server(rpcUrl, { allowHttp: rpcUrl.startsWith("http://") }),
+      new rpc.Server(network.rpcUrl, { allowHttp: network.rpcUrl.startsWith("http://") }),
       retry
     );
-    const network = await server.getNetwork();
+    const rpcNetwork = await server.getNetwork();
+    if (network.networkPassphrase !== rpcNetwork.passphrase) {
+      throw new NetworkMismatchError(
+        network.networkPassphrase,
+        rpcNetwork.passphrase,
+        "The supplied NetworkConfig declares"
+      );
+    }
 
     const sourceAccount = new Account(Keypair.random().publicKey(), "0");
-    const contract = new Contract(contractId);
+    const contract = new Contract(network.contractId);
 
     const transaction = new TransactionBuilder(sourceAccount, {
       fee: "100",
-      networkPassphrase: network.passphrase
+      networkPassphrase: rpcNetwork.passphrase
     })
       .addOperation(contract.call("version"))
       .setTimeout(30)

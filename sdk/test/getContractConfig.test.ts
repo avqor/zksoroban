@@ -13,7 +13,7 @@ import test from "node:test";
 import { xdr, scValToNative, Keypair } from "@stellar/stellar-sdk";
 
 import { getContractConfig, GetContractConfigOptions } from "../src/verify";
-import { ContractConfig, SorobanZkError, SorobanZkErrorCode } from "../src/types";
+import { ContractConfig, SorobanZkError, SorobanZkErrorCode, TESTNET } from "../src/types";
 
 // ---------------------------------------------------------------------------
 // A stable deterministic admin address used in simulated results
@@ -91,8 +91,7 @@ function withStubbedServer(
 }
 
 const DEFAULT_OPTS: GetContractConfigOptions = {
-  rpcUrl: "http://localhost:8000",
-  contractId: "CBL6MAWJALQP25LYKUUOC34K464XPSF6BLKUW6MXZDEXEDXMQUSP7HNN"
+  network: TESTNET
 };
 
 /**

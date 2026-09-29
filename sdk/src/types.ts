@@ -142,9 +142,79 @@ export interface RetryAttemptInfo {
   error: unknown;
 }
 
-export interface VerifyOptions {
+/**
+ * A network endpoint plus the one contract a call targets on it — the
+ * `rpcUrl`, `networkPassphrase`, and `contractId` that, before
+ * zksoroban#40, were scattered across separate string parameters on
+ * every SDK function and had to be kept in sync by hand across every
+ * call site. Every RPC-touching SDK function now takes a single
+ * `network: NetworkConfig` instead.
+ *
+ * `networkPassphrase` isn't just documentation — every function that
+ * takes a `NetworkConfig` still asks the RPC server for its own
+ * passphrase (`getNetwork()`, as it always has) and now also checks it
+ * against `network.networkPassphrase`, throwing {@link NetworkMismatchError}
+ * on a mismatch. This is exactly the class of mistake centralizing
+ * network config is meant to prevent — an `rpcUrl` pointed at one
+ * network with a `networkPassphrase`/`contractId` left over from
+ * another — caught before a transaction is ever built, not after it
+ * fails in some less obvious way downstream.
+ *
+ * Use {@link TESTNET}/{@link MAINNET}/{@link LOCAL} directly, or spread
+ * one with a different `contractId` when a call targets a different
+ * contract on the same network (e.g. `contracts/registry` instead of
+ * `contracts/verifier`): `{ ...TESTNET, contractId: REGISTRY_ID }`.
+ */
+export interface NetworkConfig {
   rpcUrl: string;
+  networkPassphrase: string;
   contractId: string;
+}
+
+/**
+ * `contracts/verifier`'s current Testnet deployment — see the root
+ * README's "Testnet Deployment" section. `soroban-testnet.stellar.org`
+ * is Stellar's own free, public Testnet RPC endpoint.
+ */
+export const TESTNET: NetworkConfig = {
+  rpcUrl: "https://soroban-testnet.stellar.org",
+  networkPassphrase: "Test SDF Network ; September 2015",
+  contractId: "CBL6MAWJALQP25LYKUUOC34K464XPSF6BLKUW6MXZDEXEDXMQUSP7HNN"
+};
+
+/**
+ * Mainnet's network passphrase, for completeness — `rpcUrl` and
+ * `contractId` are deliberately left empty. Stellar does not operate a
+ * single free public Mainnet Soroban RPC endpoint the way it does for
+ * Testnet (real deployments use a self-hosted or third-party RPC
+ * provider), and no `zksoroban` contract is deployed to Mainnet: the
+ * reference circuit's trusted setup is explicitly testnet-only (see
+ * `docs/security-model.md`'s Trust Assumptions) and was never meant to
+ * secure anything of real value. Fill in both before use:
+ * `{ ...MAINNET, rpcUrl: "<your RPC provider>", contractId: "<your deployment>" }`.
+ */
+export const MAINNET: NetworkConfig = {
+  rpcUrl: "",
+  networkPassphrase: "Public Global Stellar Network ; September 2015",
+  contractId: ""
+};
+
+/**
+ * A local `stellar container start local` quickstart node — see
+ * `docs/performance.md`'s reproduction steps for the exact commands.
+ * `contractId` is deliberately empty: a local deployment's contract ID
+ * is generated fresh by `stellar contract deploy` and has no universal
+ * default. Fill it in after deploying:
+ * `{ ...LOCAL, contractId: "<your local deployment>" }`.
+ */
+export const LOCAL: NetworkConfig = {
+  rpcUrl: "http://localhost:8000/rpc",
+  networkPassphrase: "Standalone Network ; February 2017",
+  contractId: ""
+};
+
+export interface VerifyOptions {
+  network: NetworkConfig;
   keypair: Keypair;
   calldata?: SorobanProofCalldata;
   bundle?: ProofBundle;
@@ -181,9 +251,8 @@ export interface VerifyResult {
  * call is simulation-only, exactly like {@link GetContractConfigOptions}.
  */
 export interface VerifyViaRegistryOptions {
-  rpcUrl: string;
-  /** Bech32m address of the deployed `contracts/registry` instance. */
-  registryContractId: string;
+  /** `network.contractId` here is `contracts/registry`'s address, not `contracts/verifier`'s. */
+  network: NetworkConfig;
   /** The `id` a circuit was registered under via `register_circuit`. */
   circuitId: number;
   calldata?: SorobanProofCalldata;
@@ -199,7 +268,7 @@ export interface VerifyViaRegistryOptions {
  * One proof in a {@link verifyBatchOnChain} call, targeting
  * `contracts/verifier`'s `verify_batch`. Same shape as a single
  * {@link VerifyOptions}'s proof inputs, minus the fields that are shared
- * across the whole batch (`rpcUrl`, `contractId`, `keypair`).
+ * across the whole batch (`network`, `keypair`).
  */
 export interface VerifierBatchItem {
   proof: SnarkjsProof;
@@ -218,8 +287,7 @@ export interface VerifierBatchItem {
  * expiry check.
  */
 export interface VerifyBatchOptions {
-  rpcUrl: string;
-  contractId: string;
+  network: NetworkConfig;
   keypair: Keypair;
   items: VerifierBatchItem[];
   /**
@@ -259,9 +327,8 @@ export interface RegistryBatchItem {
  * call is simulation-only.
  */
 export interface VerifyBatchViaRegistryOptions {
-  rpcUrl: string;
-  /** Bech32m address of the deployed `contracts/registry` instance. */
-  registryContractId: string;
+  /** `network.contractId` here is `contracts/registry`'s address, not `contracts/verifier`'s. */
+  network: NetworkConfig;
   items: RegistryBatchItem[];
   /**
    * Optional retry policy for transient RPC failures. Omit for the
@@ -321,9 +388,13 @@ export class ZkInputError extends SorobanZkError {
 }
 
 export class NetworkMismatchError extends SorobanZkError {
-  constructor(public expected: string, public actual: string) {
+  constructor(
+    public expected: string,
+    public actual: string,
+    subject = "This ProofBundle targets"
+  ) {
     super(
-      `ProofBundle targets network "${expected}" but the configured network is "${actual}"`,
+      `${subject} network "${expected}", but the configured network's RPC server reports "${actual}"`,
       SorobanZkErrorCode.NETWORK_MISMATCH
     );
     this.name = "NetworkMismatchError";

@@ -94,11 +94,52 @@ Public API:
 - `verifyBatchViaRegistry(opts): Promise<boolean[]>` — `contracts/registry`, batched, simulation-only
 - `estimateVerifyFee(opts): Promise<EstimateVerifyFeeResult>`
 - `getContractConfig(opts): Promise<ContractConfig>`
+- `getContractVersion(network, retry?): Promise<string>`
 - `withRetry` / `RetryOptions` — opt-in exponential-backoff retries for transient RPC failures (see below)
 
 See [Batch Verification](#batch-verification) below for the two batch functions.
 
-The SDK is stateless. RPC URL, contract ID, and source keypair are passed in at call time.
+The SDK is stateless. Every RPC-touching call above takes a `network:
+NetworkConfig` (`{ rpcUrl, networkPassphrase, contractId }`) plus a
+source keypair where one's needed — see "Network Configuration" below.
+
+### Network Configuration
+
+Per [zksoroban#40](https://github.com/yusufadeagbo/zksoroban/issues/40),
+every RPC-touching SDK function takes a single `network: NetworkConfig`
+— `{ rpcUrl, networkPassphrase, contractId }` — instead of separate
+`rpcUrl`/`contractId`/`registryContractId` string parameters. `TESTNET`,
+`MAINNET`, and `LOCAL` are exported presets:
+
+```ts
+import { TESTNET, verifyOnChain } from "@zksoroban/sdk";
+
+const result = await verifyOnChain({ network: TESTNET, keypair, bundle });
+```
+
+`MAINNET` and `LOCAL` deliberately ship with an empty `rpcUrl` and/or
+`contractId` — Stellar has no single free public Mainnet Soroban RPC
+endpoint the way it does for Testnet, no `zksoroban` contract is
+deployed to Mainnet (the reference circuit's trusted setup is
+testnet-only — see `docs/security-model.md`), and a local quickstart
+deployment's contract ID is generated fresh each time, with no
+universal default. Fill in what's missing by spreading the preset:
+`{ ...LOCAL, contractId: myLocalDeployment }`.
+
+A call whose target contract lives on the same network but isn't the
+default (`contracts/registry` instead of `contracts/verifier`, say)
+overrides just `contractId` the same way:
+`{ ...TESTNET, contractId: registryContractId }`.
+
+**`networkPassphrase` isn't just documentation.** Every function that
+takes a `network` still asks the RPC server for its own passphrase
+(`getNetwork()`, exactly as before) and now also checks it against
+`network.networkPassphrase`, throwing `NetworkMismatchError` — the same
+error class `assertBundleNetwork` already used for a `ProofBundle`
+pointed at the wrong network — before building any transaction. This is
+exactly the class of mistake centralizing network config exists to
+prevent: an `rpcUrl` pointed at one network with a `contractId` left
+over from another.
 
 ### Retry & Exponential Backoff
 
@@ -110,11 +151,10 @@ connections, a node restart mid-request. Pass an optional `retry` policy
 to turn on per-request retries with exponential backoff:
 
 ```ts
-import { verifyViaRegistry } from "@zksoroban/sdk";
+import { TESTNET, verifyViaRegistry } from "@zksoroban/sdk";
 
 const verified = await verifyViaRegistry({
-  rpcUrl,
-  registryContractId,
+  network: { ...TESTNET, contractId: registryContractId },
   circuitId,
   bundle,
   retry: {

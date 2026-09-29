@@ -3,7 +3,10 @@ import path from "node:path";
 import readline from "node:readline";
 
 import {
+  MAINNET,
+  NetworkConfig,
   SnarkjsProof,
+  TESTNET,
   ZkInputError,
   diffProofs,
   formatProof,
@@ -18,9 +21,13 @@ const snarkjs: any = require("snarkjs");
 // registered under circuit ID 1 there.
 const TESTNET_REGISTRY_CONTRACT_ID = "CDTPNARKKZCZ36PL4BNKBXZTT2BLVR373S2K5NCFAOKCPPY62ESRHSXH";
 const POSEIDON_PREIMAGE_CIRCUIT_ID = 1;
-const NETWORKS: Record<string, string> = {
-  testnet: "https://soroban-testnet.stellar.org",
-  mainnet: "https://mainnet.sorobanrpc.com"
+// TESTNET/MAINNET (zksoroban#40) supply rpcUrl + networkPassphrase; this demo
+// still lets the user pick which network and which registry contract ID at
+// runtime, so contractId gets filled in from their answer below rather than
+// baked into these two entries.
+const NETWORKS: Record<string, NetworkConfig> = {
+  testnet: TESTNET,
+  mainnet: MAINNET
 };
 const CONTRACT_PATTERN = /^C[A-Z2-7]{55}$/;
 
@@ -32,9 +39,8 @@ const OUT_OF_FIELD_PUBLIC_INPUT =
 
 interface Answers {
   secret: bigint;
-  network: string;
-  rpcUrl: string;
-  contractId: string;
+  networkName: string;
+  network: NetworkConfig;
   verbosity: "quiet" | "normal" | "verbose";
 }
 
@@ -106,11 +112,12 @@ async function collectAnswers(rl: readline.Interface): Promise<Answers> {
     return undefined;
   });
 
+  const networkName = network.toLowerCase();
+
   return {
     secret: secretRaw === "random" ? randomSecret() : BigInt(secretRaw),
-    network: network.toLowerCase(),
-    rpcUrl: NETWORKS[network.toLowerCase()],
-    contractId,
+    networkName,
+    network: { ...NETWORKS[networkName], contractId },
     verbosity: verbosity.toLowerCase() as Answers["verbosity"]
   };
 }
@@ -118,15 +125,13 @@ async function collectAnswers(rl: readline.Interface): Promise<Answers> {
 async function verifyAndReport(opts: {
   proof: SnarkjsProof;
   publicSignals: string[];
-  rpcUrl: string;
-  contractId: string;
+  network: NetworkConfig;
   log: (line: string, level?: Answers["verbosity"]) => void;
 }): Promise<void> {
   opts.log("simulating verify_proof against the registry...", "verbose");
 
   const verified = await verifyViaRegistry({
-    rpcUrl: opts.rpcUrl,
-    registryContractId: opts.contractId,
+    network: opts.network,
     circuitId: POSEIDON_PREIMAGE_CIRCUIT_ID,
     calldata: formatProof(opts.proof, opts.publicSignals)
   });
@@ -163,7 +168,7 @@ async function main(): Promise<void> {
   const commitment = poseidon([answers.secret]);
 
   log(`secret: ${answers.secret.toString()}`, "verbose");
-  log(`network: ${answers.network} (${answers.rpcUrl})`, "verbose");
+  log(`network: ${answers.networkName} (${answers.network.rpcUrl})`, "verbose");
   log(`commitment: ${commitment.toString()}`, "normal");
   log("generating proof...", "verbose");
 
@@ -178,8 +183,7 @@ async function main(): Promise<void> {
   await verifyAndReport({
     proof,
     publicSignals,
-    rpcUrl: answers.rpcUrl,
-    contractId: answers.contractId,
+    network: answers.network,
     log
   });
 
@@ -194,8 +198,7 @@ async function main(): Promise<void> {
   await verifyAndReport({
     proof,
     publicSignals: wrongPublicSignals,
-    rpcUrl: answers.rpcUrl,
-    contractId: answers.contractId,
+    network: answers.network,
     log
   });
 

@@ -23,7 +23,7 @@ import {
   withRetry
 } from "../src/retry";
 import { getContractConfig, verifyOnChain } from "../src/verify";
-import { RetryOptions, SorobanZkErrorCode, VerifyOptions } from "../src/types";
+import { RetryOptions, SorobanZkErrorCode, TESTNET, VerifyOptions } from "../src/types";
 
 import * as stellarSdk from "@stellar/stellar-sdk";
 
@@ -334,8 +334,7 @@ function withStubbedServer(
 }
 
 const DEFAULT_OPTS: VerifyOptions = {
-  rpcUrl: "http://localhost:8000",
-  contractId: "CBL6MAWJALQP25LYKUUOC34K464XPSF6BLKUW6MXZDEXEDXMQUSP7HNN",
+  network: TESTNET,
   keypair: STUB_KEYPAIR,
   calldata: {
     proofA: Buffer.alloc(64, 1),
@@ -506,8 +505,7 @@ test("getContractConfig retries transient simulation failures when retry is enab
     }),
     async () => {
       const config = await getContractConfig({
-        rpcUrl: "http://localhost:8000",
-        contractId: "CBL6MAWJALQP25LYKUUOC34K464XPSF6BLKUW6MXZDEXEDXMQUSP7HNN",
+        network: TESTNET,
         retry: { maxRetries: 3, baseDelayMs: 1, jitter: false }
       });
 

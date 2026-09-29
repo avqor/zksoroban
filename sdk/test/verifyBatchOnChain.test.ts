@@ -12,7 +12,7 @@ import test from "node:test";
 import { Keypair, rpc, xdr } from "@stellar/stellar-sdk";
 
 import { verifyBatchOnChain } from "../src/verify";
-import { SorobanZkError, SorobanZkErrorCode, VerifyBatchOptions } from "../src/types";
+import { SorobanZkError, SorobanZkErrorCode, TESTNET, VerifyBatchOptions } from "../src/types";
 import { VALID_SNARKJS_PROOF, VALID_PUBLIC_SIGNALS } from "./fixtures";
 
 import * as stellarSdk from "@stellar/stellar-sdk";
@@ -64,8 +64,7 @@ function buildTransactionResultXdr(feeCharged = "100"): string {
 }
 
 const DEFAULT_OPTS: VerifyBatchOptions = {
-  rpcUrl: "http://localhost:8000",
-  contractId: "CBL6MAWJALQP25LYKUUOC34K464XPSF6BLKUW6MXZDEXEDXMQUSP7HNN",
+  network: TESTNET,
   keypair: STUB_KEYPAIR,
   items: [
     { proof: VALID_SNARKJS_PROOF, publicSignals: VALID_PUBLIC_SIGNALS },

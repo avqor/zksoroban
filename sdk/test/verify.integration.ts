@@ -5,7 +5,7 @@ import { Keypair, rpc } from "@stellar/stellar-sdk";
 
 import { formatProof } from "../src/proof";
 import { getContractConfig, verifyOnChain } from "../src/verify";
-import { SorobanZkError, SorobanZkErrorCode } from "../src/types";
+import { SorobanZkError, SorobanZkErrorCode, TESTNET } from "../src/types";
 import {
   TESTNET_RPC_URL,
   VALID_PUBLIC_SIGNALS,
@@ -30,6 +30,7 @@ if (!secretKey || !verifierContractId) {
 } else {
   const keypair = Keypair.fromSecret(secretKey);
   const server = new rpc.Server(TESTNET_RPC_URL);
+  const network = { ...TESTNET, contractId: verifierContractId };
 
   async function futureExpiryLedger(margin = 10_000): Promise<number> {
     const { sequence } = await server.getLatestLedger();
@@ -44,8 +45,7 @@ if (!secretKey || !verifierContractId) {
     );
 
     const result = await verifyOnChain({
-      rpcUrl: TESTNET_RPC_URL,
-      contractId: verifierContractId,
+      network,
       keypair,
       calldata
     });
@@ -64,8 +64,7 @@ if (!secretKey || !verifierContractId) {
     );
 
     const result = await verifyOnChain({
-      rpcUrl: TESTNET_RPC_URL,
-      contractId: verifierContractId,
+      network,
       keypair,
       calldata: {
         ...calldata,
@@ -82,8 +81,7 @@ if (!secretKey || !verifierContractId) {
     assert.equal(calldata.publicInputs.length, 1);
 
     const result = await verifyOnChain({
-      rpcUrl: TESTNET_RPC_URL,
-      contractId: verifierContractId,
+      network,
       keypair,
       calldata
     });
@@ -100,8 +98,7 @@ if (!secretKey || !verifierContractId) {
     );
 
     const result = await verifyOnChain({
-      rpcUrl: TESTNET_RPC_URL,
-      contractId: verifierContractId,
+      network,
       keypair,
       calldata
     });
@@ -119,8 +116,7 @@ if (!secretKey || !verifierContractId) {
 
     await assert.rejects(
       verifyOnChain({
-        rpcUrl: TESTNET_RPC_URL,
-        contractId: verifierContractId,
+        network,
         keypair,
         calldata
       }),
@@ -134,10 +130,7 @@ if (!secretKey || !verifierContractId) {
     // Assumes the test completes within a single rate-limit window — true
     // for any window_size that isn't unusually small relative to a few
     // sequential RPC round-trips (typically hundreds of ledgers or more).
-    const config = await getContractConfig({
-      rpcUrl: TESTNET_RPC_URL,
-      contractId: verifierContractId
-    });
+    const config = await getContractConfig({ network });
 
     for (let i = 0; i < config.rateLimitMax; i++) {
       const calldata = formatProof(
@@ -146,8 +139,7 @@ if (!secretKey || !verifierContractId) {
         await futureExpiryLedger()
       );
       await verifyOnChain({
-        rpcUrl: TESTNET_RPC_URL,
-        contractId: verifierContractId,
+        network,
         keypair,
         calldata
       });
@@ -161,8 +153,7 @@ if (!secretKey || !verifierContractId) {
 
     await assert.rejects(
       verifyOnChain({
-        rpcUrl: TESTNET_RPC_URL,
-        contractId: verifierContractId,
+        network,
         keypair,
         calldata: overBudgetCalldata
       }),

@@ -11,7 +11,7 @@ import test from "node:test";
 import { xdr } from "@stellar/stellar-sdk";
 
 import { verifyViaRegistry } from "../src/verify";
-import { SorobanZkError, SorobanZkErrorCode, VerifyViaRegistryOptions } from "../src/types";
+import { SorobanZkError, SorobanZkErrorCode, TESTNET, VerifyViaRegistryOptions } from "../src/types";
 
 import * as stellarSdk from "@stellar/stellar-sdk";
 
@@ -59,8 +59,7 @@ function buildStub(simResult: object, capturedArgs: { args?: xdr.ScVal[] } = {})
 }
 
 const DEFAULT_OPTS: VerifyViaRegistryOptions = {
-  rpcUrl: "http://localhost:8000",
-  registryContractId: "CDTPNARKKZCZ36PL4BNKBXZTT2BLVR373S2K5NCFAOKCPPY62ESRHSXH",
+  network: { ...TESTNET, contractId: "CDTPNARKKZCZ36PL4BNKBXZTT2BLVR373S2K5NCFAOKCPPY62ESRHSXH" },
   circuitId: 2,
   calldata: {
     proofA: Buffer.alloc(64, 1),

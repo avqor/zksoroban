@@ -37,11 +37,10 @@ transient failures with exponential backoff (see
 [docs/architecture.md](docs/architecture.md#retry--exponential-backoff)):
 
 ```ts
-import { verifyViaRegistry } from "@zksoroban/sdk";
+import { TESTNET, verifyViaRegistry } from "@zksoroban/sdk";
 
 const verified = await verifyViaRegistry({
-  rpcUrl,
-  registryContractId,
+  network: { ...TESTNET, contractId: registryContractId },
   circuitId,
   bundle,
   retry: { maxRetries: 3, baseDelayMs: 500 },

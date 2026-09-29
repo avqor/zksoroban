@@ -34,6 +34,9 @@ sense.
   shape losslessly; rejects an unrecognized version or a corrupted/
   truncated byte array with a typed error. See
   `docs/proof-format.md`'s "Storage/Transport Serialization" section (#33).
+- **sdk**: `NetworkConfig` type (`{ rpcUrl, networkPassphrase, contractId }`)
+  and `TESTNET`/`MAINNET`/`LOCAL` presets — see the "Changed" entry
+  below and `docs/architecture.md`'s "Network Configuration" section (#40).
 - **contracts+sdk**: per-proof replay protection on `contracts/verifier`
   — a `Nullifier(sha256(proof_a))` stored in persistent storage on every
   successful verification rejects a repeat of the exact same proof with
@@ -117,6 +120,19 @@ sense.
 
 ### Changed
 
+- **sdk, BREAKING**: every RPC-touching SDK function (`verifyOnChain`,
+  `verifyBatchOnChain`, `verifyViaRegistry`, `verifyBatchViaRegistry`,
+  `estimateVerifyFee`, `getContractConfig`, `getContractVersion`) now
+  takes a single `network: NetworkConfig` instead of separate
+  `rpcUrl`/`contractId`/`registryContractId` string parameters (or, for
+  `getContractVersion`, separate positional arguments). Also validates
+  `network.networkPassphrase` against what the RPC server itself
+  reports, throwing `NetworkMismatchError` on a mismatch — a check that
+  wasn't possible before there was a caller-declared passphrase to check
+  against. Migrate a call site by replacing its `rpcUrl`/`contractId`
+  fields with `network: TESTNET` (or another preset, spread with a
+  different `contractId` for a non-default contract on the same
+  network) (#40).
 - **contracts**: `contracts/verifier`'s `update_vk` is removed —
   replaced by the timelocked `propose_vk_update`/`execute_vk_update`
   above. `__constructor` also gains a new required `vk_update_delay`
