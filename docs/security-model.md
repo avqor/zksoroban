@@ -133,7 +133,7 @@ What `zksoroban` actually provides, end to end:
 | Threat | Attacker Capability | Impact | Mitigation / Accepted Risk |
 |---|---|---|---|
 | Forged proof for a false statement | Controls the trusted setup's toxic waste (only realistic if they generated it, or the ceremony was compromised) | Complete break — contract accepts a proof for a statement that isn't true | **Accepted risk on testnet** (setup is explicitly not production-grade); **mitigation for production** is a real multi-party ceremony with provable toxic-waste destruction |
-| Proof replay | None beyond ability to resubmit previously-seen, still-valid transaction data | The same valid proof can be verified more than once, within the rate-limit budget and before its `expiry_ledger` passes | **Accepted risk, by design** — `contracts/verifier` has no nullifier/single-use tracking (see Known Limitations). Applications needing single-use semantics must implement their own replay protection |
+| Proof replay | None beyond ability to resubmit previously-seen, still-valid transaction data | As of [#11](https://github.com/yusufadeagbo/zksoroban/issues/11), submitting the exact same proof bytes a second time fails with `Error::AlreadyUsed` — no impact. A fresh, independently re-randomized proof of the *same underlying secret* still verifies again, since Groth16 proving is randomized and the nullifier is derived from the proof, not the secret | **Mitigated for exact-calldata replay** — see Known Limitations for what's still an application-level responsibility |
 | Rate-limit storage growth (DoS via cost inflation) | Any address that can submit transactions (no special privilege) | Each new `(caller, window)` pair permanently occupies instance storage, which is loaded on every future invocation — this makes every future call incrementally more expensive over time, for everyone | **Tracked, unresolved** — filed as [zksoroban#178](https://github.com/yusufadeagbo/zksoroban/issues/178); the fix is moving this storage to Soroban's `temporary()` storage class |
 | Admin key compromise | Controls the private key configured as `admin` at contract construction | Can disable or misconfigure rate limiting; can also call `propose_vk_update` to queue an arbitrary verifying key, which `execute_vk_update` will apply after `vk_update_delay` ledgers — a full soundness break, not just availability, once it lands. Cannot read any private witness, and (as of [#46](https://github.com/yusufadeagbo/zksoroban/issues/46)) cannot make the change take effect immediately. | **Accepted risk inherent to having an admin role at all**, now a materially bigger one than before this existed, though the delay gives a real reaction window — standard key-management practices (cold storage, multi-sig) still apply; not something this contract's code can mitigate beyond the timelock it already provides |
 | Malformed/adversarial proof bytes | Any address that can submit transactions | Attempting to trigger a panic or unexpected contract behavior with malformed byte lengths | **Mitigated** — `read_g1`/`read_g2` panic cleanly on wrong lengths, and Soroban's atomic transaction semantics roll back *all* state changes (including any rate-limit counter increment) on panic, so malformed submissions cannot even be used to grief the rate limit |
@@ -150,8 +150,12 @@ experimentation:
   private is the witness (`secret`); the *act* of verifying, the calling
   address, and the timing are all public, exactly like any other Soroban
   transaction.
-- **No replay protection.** Covered above — the same valid proof can be
-  submitted more than once.
+- **Replay protection is per-proof, not per-secret.** Covered above —
+  resubmitting the exact same proof bytes fails, but a fresh proof of
+  the same underlying secret does not. An application needing "this
+  secret can only ever be proven once" (not just "this exact calldata
+  can only be submitted once") still needs its own commitment-level
+  tracking.
 - **No privacy for public inputs.** The `commitment` (and any other public
   input) is, by definition, public — it's an argument to `verify_proof`
   and appears in the transaction. Only values the circuit marks `private`
@@ -174,9 +178,12 @@ If you are building on top of `zksoroban`:
    mainnet or anywhere real value is at stake.** Run your own trusted
    setup ceremony for your circuit, with toxic waste destruction you can
    verify or attest to.
-2. **Add your own replay/nullifier protection if your application needs
-   single-use semantics** (voting, one-time claims, airdrops). Do not
-   assume the contract does this for you — it does not.
+2. **Add your own commitment-level replay protection if your application
+   needs true single-use-secret semantics** (voting, one-time claims,
+   airdrops). The contract's own nullifier ([#11](https://github.com/yusufadeagbo/zksoroban/issues/11))
+   stops the exact same proof from being resubmitted, but a fresh,
+   re-randomized proof of the same secret still verifies — don't assume
+   it enforces "this secret, once, ever" for you.
 3. **Treat the admin key as a full cryptographic trust anchor, not just
    a privileged operational key.** Since it can call `propose_vk_update`,
    compromising it means an attacker can eventually make the contract

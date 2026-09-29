@@ -25,6 +25,15 @@ sense.
   shape losslessly; rejects an unrecognized version or a corrupted/
   truncated byte array with a typed error. See
   `docs/proof-format.md`'s "Storage/Transport Serialization" section (#33).
+- **contracts+sdk**: per-proof replay protection on `contracts/verifier`
+  — a `Nullifier(sha256(proof_a))` stored in persistent storage on every
+  successful verification rejects a repeat of the exact same proof with
+  `Error::AlreadyUsed`, checked before the pairing check runs. A fresh,
+  independently-generated proof of the same secret still verifies
+  (Groth16 proving is randomized), so this is per-proof, not
+  per-secret — see `docs/security.md`'s Guarantees and Non-Guarantees
+  section for the exact scope. `verifyOnChain` maps the new contract
+  error to `SorobanZkErrorCode.ALREADY_USED` (#11).
 - **contracts**: timelocked verifying-key updates on `contracts/verifier`
   — `propose_vk_update`/`execute_vk_update` replace the old immediate
   `update_vk`, with a `vk_update_delay` (in ledgers, fixed at
