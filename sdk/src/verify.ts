@@ -15,6 +15,7 @@ import { withRetry } from "./retry.js";
 import { formatProof } from "./proof.js";
 import {
   ContractConfig,
+  emitProofStage,
   NetworkMismatchError,
   ProofBundle,
   RetryOptions,
@@ -229,6 +230,7 @@ export async function verifyOnChain(opts: VerifyOptions): Promise<VerifyResult> 
   validateCalldata(calldata);
 
   try {
+    emitProofStage(opts.onProgress, "submit_start");
     const server = withRetry(
       new rpc.Server(opts.rpcUrl, { allowHttp: opts.rpcUrl.startsWith("http://") }),
       opts.retry
@@ -309,6 +311,7 @@ export async function verifyOnChain(opts: VerifyOptions): Promise<VerifyResult> 
         );
       }
 
+      emitProofStage(opts.onProgress, "submit_done");
       return {
         verified: returnValue,
         txHash: result.txHash,

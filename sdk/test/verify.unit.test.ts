@@ -220,6 +220,40 @@ test("verifyOnChain reports the fee from the transaction result", async () => {
   );
 });
 
+test("verifyOnChain emits submit_start then submit_done, in order, for a successful call", async () => {
+  const stages: string[] = [];
+
+  await withStubbedServer(
+    () => buildSuccessStub({}, { returnValue: xdr.ScVal.scvBool(true) }),
+    async () => {
+      await verifyOnChain({
+        ...DEFAULT_OPTS,
+        onProgress: (stage) => {
+          stages.push(stage);
+        }
+      });
+    }
+  );
+
+  assert.deepEqual(stages, ["submit_start", "submit_done"]);
+});
+
+test("verifyOnChain does not abort when onProgress itself throws", async () => {
+  await withStubbedServer(
+    () => buildSuccessStub({}, { returnValue: xdr.ScVal.scvBool(true) }),
+    async () => {
+      const result = await verifyOnChain({
+        ...DEFAULT_OPTS,
+        onProgress: () => {
+          throw new Error("boom");
+        }
+      });
+
+      assert.equal(result.verified, true);
+    }
+  );
+});
+
 const CONTRACT_ERROR_CASES: Array<[number, SorobanZkErrorCode]> = [
   [1, SorobanZkErrorCode.CONTRACT_NOT_INITIALIZED],
   [2, SorobanZkErrorCode.RATE_LIMIT_EXCEEDED],

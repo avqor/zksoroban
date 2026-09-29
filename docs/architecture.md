@@ -74,15 +74,19 @@ The SDK has three responsibilities:
 - `proof.ts`: convert `snarkjs` proof JSON into the exact BN254 byte layout expected by the contract
 - `verify.ts`: build, submit, and decode the Soroban verifier transaction
 
-A fourth, `serialize.ts`, handles a related but distinct concern: a
-compact, versioned binary format for storing or transporting a raw
-snarkjs proof — see [docs/proof-format.md](proof-format.md#storagetransport-serialization).
+A fourth file, `browser.ts` (the separate `@zksoroban/sdk/browser` entry
+point — see below), generates the proof `proof.ts` then encodes:
+`generateProof` runs `snarkjs.groth16.fullProve`'s underlying WASM
+witness computation and Groth16 proving from in-memory `Uint8Array`
+bytes, with no filesystem access, so it works the same in a browser as
+in Node.
 
 Public API:
 
 - `poseidon(inputs: bigint[]): bigint`
 - `formatProof(proof, publicSignals): SorobanProofCalldata`
 - `formatVerifyingKey(vk): RegistryVerifyingKey`
+- `generateProof(secret, commitment, wasm, zkey, onProgress?): Promise<GenerateProofResult>` — `@zksoroban/sdk/browser` only (see below)
 - `serializeProof(proof, publicSignals): Uint8Array` / `deserializeProof(bytes): { proof, publicSignals }`
 - `verifyOnChain(opts): Promise<VerifyResult>` — `contracts/verifier`, signed transaction
 - `verifyViaRegistry(opts): Promise<boolean>` — `contracts/registry`, simulation-only
@@ -167,6 +171,43 @@ Key properties:
 - **Scope**: transport-only. The retry layer mediates individual RPC
   requests; it never re-runs a call's own logic (calldata validation,
   result decoding, typed-error mapping all happen exactly once).
+
+### Progress Callbacks
+
+Per [zksoroban#29](https://github.com/yusufadeagbo/zksoroban/issues/29),
+`generateProof` and `verifyOnChain` both take an optional
+`onProgress: (stage: ProofStage) => void`, where `ProofStage` is:
+
+```ts
+type ProofStage =
+  | "witness_start" | "witness_done"
+  | "proof_start"   | "proof_done"
+  | "submit_start"  | "submit_done";
+```
+
+**Each function only emits the stages it actually performs** — they're
+two separate calls in this SDK, not one combined operation, and neither
+one fakes timing for work it isn't doing:
+
+- `generateProof` emits `witness_start`/`witness_done` around WASM
+  witness computation, then `proof_start`/`proof_done` around Groth16
+  proving. These are genuinely the two separate, independently-timed
+  calls `snarkjs.groth16.fullProve` makes internally
+  (`wtns.calculate` then `groth16.prove`) and normally hides behind one
+  opaque `await`; `generateProof` calls them directly itself to get real
+  hook points between them, instead of one call with a progress bar that
+  can't actually move until it's already done.
+- `verifyOnChain` emits `submit_start` right before building the
+  transaction and `submit_done` once a final result is ready to return.
+
+An application that wants all six stages, in order, calls `generateProof`
+then `verifyOnChain` with the same `onProgress` — the natural sequence
+for "generate a proof, then submit it," which is already two calls, not
+one, in this SDK.
+
+Any error `onProgress` itself throws is caught and discarded
+(`emitProofStage` in `types.ts`) — a broken progress callback must never
+abort the operation it's reporting on.
 
 ## Contract Layer
 

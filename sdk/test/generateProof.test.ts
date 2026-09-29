@@ -105,4 +105,30 @@ if (!fs.existsSync(WASM_PATH)) {
       }
     );
   });
+
+  test("generateProof emits witness_start, witness_done, proof_start, proof_done in order", async () => {
+    const { wasm, zkey } = loadCircuitBytes();
+    const secret = 12345n;
+    const commitment = poseidon([secret]);
+    const stages: string[] = [];
+
+    await generateProof(secret, commitment, wasm, zkey, (stage) => {
+      stages.push(stage);
+    });
+
+    assert.deepEqual(stages, ["witness_start", "witness_done", "proof_start", "proof_done"]);
+  });
+
+  test("generateProof does not abort when onProgress itself throws", async () => {
+    const { wasm, zkey } = loadCircuitBytes();
+    const secret = 12345n;
+    const commitment = poseidon([secret]);
+
+    const { proof, publicSignals } = await generateProof(secret, commitment, wasm, zkey, () => {
+      throw new Error("boom");
+    });
+
+    assert.equal(proof.protocol, "groth16");
+    assert.deepEqual(publicSignals, [commitment.toString()]);
+  });
 }

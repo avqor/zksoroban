@@ -18,6 +18,15 @@ sense.
 
 ### Added
 
+- **sdk**: optional `onProgress` progress callback on `generateProof`
+  (`@zksoroban/sdk/browser`) and `verifyOnChain`, reporting the real
+  `witness_start`/`witness_done`/`proof_start`/`proof_done` and
+  `submit_start`/`submit_done` stages each function actually performs —
+  `generateProof` now calls `snarkjs.wtns.calculate`/`groth16.prove`
+  directly (the same two calls `groth16.fullProve` makes internally)
+  instead of one opaque call, specifically to get real hook points
+  between them. A throwing `onProgress` never aborts the call it's
+  reporting on (#29).
 - **sdk**: `serializeProof`/`deserializeProof` (`sdk/src/serialize.ts`) —
   a compact, versioned binary format for storing a raw snarkjs proof and
   its public signals or sending them over a network, distinct from
