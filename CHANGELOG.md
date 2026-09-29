@@ -18,6 +18,13 @@ sense.
 
 ### Added
 
+- **sdk**: `serializeProof`/`deserializeProof` (`sdk/src/serialize.ts`) —
+  a compact, versioned binary format for storing a raw snarkjs proof and
+  its public signals or sending them over a network, distinct from
+  `formatProof`'s Soroban-calldata encoding. Round-trips the full proof
+  shape losslessly; rejects an unrecognized version or a corrupted/
+  truncated byte array with a typed error. See
+  `docs/proof-format.md`'s "Storage/Transport Serialization" section (#33).
 - **contracts+sdk**: per-proof replay protection on `contracts/verifier`
   — a `Nullifier(sha256(proof_a))` stored in persistent storage on every
   successful verification rejects a repeat of the exact same proof with

@@ -205,6 +205,63 @@ Total proof bytes excluding public input vector overhead:
 64 + 128 + 64 = 256 bytes
 ```
 
+## Storage/Transport Serialization
+
+`serializeProof`/`deserializeProof` (`sdk/src/serialize.ts`, per
+[zksoroban#33](https://github.com/yusufadeagbo/zksoroban/issues/33)) are
+a **separate, generic** binary format for storing a raw snarkjs proof in
+a database or sending it over a network — distinct from the
+Soroban-calldata encoding above. Two real differences:
+
+- It round-trips the **entire** snarkjs proof shape, including the
+  projective `pi_a[2]`/`pi_b[2]`/`pi_c[2]` components (always `"1"`/
+  `["1","0"]` for a valid proof) that the contract calldata encoding
+  above never needs and so never carries. `formatProof` is allowed to
+  drop those; a generic storage format that promises "no data loss"
+  isn't.
+- It carries a 2-byte version header so a future format change can be
+  detected and rejected cleanly, rather than silently misparsed.
+
+Wire format (big-endian, all field elements 32 bytes):
+
+```text
+[2 bytes]  format version (SERIALIZED_PROOF_FORMAT_VERSION, currently 1)
+[4 bytes]  public signal count N
+[32 bytes] pi_a[0]
+[32 bytes] pi_a[1]
+[32 bytes] pi_a[2]
+[32 bytes] pi_b[0][0]
+[32 bytes] pi_b[0][1]
+[32 bytes] pi_b[1][0]
+[32 bytes] pi_b[1][1]
+[32 bytes] pi_b[2][0]
+[32 bytes] pi_b[2][1]
+[32 bytes] pi_c[0]
+[32 bytes] pi_c[1]
+[32 bytes] pi_c[2]
+[32 bytes * N] publicSignals[0..N]
+```
+
+Size:
+
+```text
+fixed overhead: 2 + 4 + (12 * 32) = 390 bytes
+total:          390 + (32 * N) bytes, for N public signals
+```
+
+For the reference circuit's one public input (`commitment`, no
+`expiryLedger`), that's 390 + 32 = **422 bytes** — versus the plain JSON
+`snarkjs` produces for the same proof, which runs well over 1 KB (each
+of the 12+ field elements is a ~77-78 digit decimal string, plus JSON's
+own key names and punctuation).
+
+`deserializeProof` rejects a version it doesn't recognize with
+`SorobanZkErrorCode.SERIALIZED_PROOF_VERSION_MISMATCH`, and any byte
+array whose length doesn't exactly match what its own header claims
+(too short, truncated, or padded with trailing bytes) with
+`SorobanZkErrorCode.CORRUPTED_SERIALIZED_PROOF` — both before touching
+any of the actual field-element bytes.
+
 ## Byte Offset Tables
 
 ### G1 point (64 bytes)
