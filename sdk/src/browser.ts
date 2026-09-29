@@ -5,14 +5,32 @@
 // plain data types/errors needed to work with its result — is exported here.
 // verify.ts, poseidon.ts and cli.ts stay out: they read files or shell out
 // via Node-only APIs and don't belong in a browser bundle.
-import { SnarkjsProof, SorobanZkError, SorobanZkErrorCode, ZkInputError } from "./types.js";
+import {
+  emitProofStage,
+  OnProofProgress,
+  SnarkjsProof,
+  SorobanZkError,
+  SorobanZkErrorCode,
+  ZkInputError
+} from "./types.js";
+
+// A "mem"-type snarkjs witness handle: wtns.calculate mutates this object
+// in place to attach the computed witness bytes, and groth16.prove reads
+// it back out — the same in-memory handoff groth16.fullProve uses
+// internally between its own two stages. See generateProof below.
+interface SnarkjsMemWitness {
+  type: "mem";
+  data?: Uint8Array;
+}
 
 interface SnarkjsModule {
+  wtns: {
+    calculate(input: Record<string, unknown>, wasm: Uint8Array, wtns: SnarkjsMemWitness): Promise<void>;
+  };
   groth16: {
-    fullProve(
-      input: Record<string, unknown>,
-      wasm: Uint8Array,
-      zkey: Uint8Array
+    prove(
+      zkey: Uint8Array,
+      wtns: SnarkjsMemWitness
     ): Promise<{ proof: SnarkjsProof; publicSignals: string[] }>;
   };
 }
@@ -34,18 +52,33 @@ export interface GenerateProofResult {
  * bundled for the web (see `sdk/vite.config.mts`), snarkjs's own `browser`
  * package export condition resolves automatically.
  *
+ * `onProgress`, if given, is called around the two stages this function
+ * actually performs separately under the hood — `witness_start`/
+ * `witness_done` around WASM witness computation, then `proof_start`/
+ * `proof_done` around Groth16 proving itself (zksoroban#29). These are
+ * genuinely the two slow, separately-timed steps `snarkjs.groth16.fullProve`
+ * normally combines into one opaque call; this function calls
+ * `snarkjs.wtns.calculate` and `snarkjs.groth16.prove` directly instead,
+ * the same two calls `fullProve` makes internally, to get real hook points
+ * between them rather than fabricated timing. Any error `onProgress` itself
+ * throws is caught and ignored — a broken progress callback must never
+ * abort proof generation.
+ *
  * @example
  * ```ts
  * const wasm = new Uint8Array(await (await fetch("/circuit.wasm")).arrayBuffer());
  * const zkey = new Uint8Array(await (await fetch("/circuit.zkey")).arrayBuffer());
- * const { proof, publicSignals } = await generateProof(secret, commitment, wasm, zkey);
+ * const { proof, publicSignals } = await generateProof(secret, commitment, wasm, zkey, (stage) => {
+ *   console.log(stage); // "witness_start", "witness_done", "proof_start", "proof_done"
+ * });
  * ```
  */
 export async function generateProof(
   secret: bigint,
   commitment: bigint,
   wasm: Uint8Array,
-  zkey: Uint8Array
+  zkey: Uint8Array,
+  onProgress?: OnProofProgress
 ): Promise<GenerateProofResult> {
   if (typeof secret !== "bigint") {
     throw new ZkInputError("secret", `must be a bigint (received ${typeof secret})`);
@@ -66,11 +99,16 @@ export async function generateProof(
   const snarkjs: SnarkjsModule = await import("snarkjs");
 
   try {
-    const { proof, publicSignals } = await snarkjs.groth16.fullProve(
-      { secret: secret.toString(), commitment: commitment.toString() },
-      wasm,
-      zkey
-    );
+    const input = { secret: secret.toString(), commitment: commitment.toString() };
+    const wtns: SnarkjsMemWitness = { type: "mem" };
+
+    emitProofStage(onProgress, "witness_start");
+    await snarkjs.wtns.calculate(input, wasm, wtns);
+    emitProofStage(onProgress, "witness_done");
+
+    emitProofStage(onProgress, "proof_start");
+    const { proof, publicSignals } = await snarkjs.groth16.prove(zkey, wtns);
+    emitProofStage(onProgress, "proof_done");
 
     return { proof, publicSignals };
   } catch (error) {
@@ -81,5 +119,5 @@ export async function generateProof(
   }
 }
 
-export { SorobanZkError, SorobanZkErrorCode, ZkInputError };
-export type { SnarkjsProof };
+export { emitProofStage, SorobanZkError, SorobanZkErrorCode, ZkInputError };
+export type { OnProofProgress, ProofStage, SnarkjsProof } from "./types.js";

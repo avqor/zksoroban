@@ -1,5 +1,44 @@
 import { Keypair } from "@stellar/stellar-sdk";
 
+/**
+ * Progress stages reported during proof generation and/or on-chain
+ * submission (zksoroban#29). `generateProof` emits `witness_*`/`proof_*`
+ * around the two real, separately-timed stages `snarkjs.groth16.fullProve`
+ * normally combines into one opaque call; `verifyOnChain` emits `submit_*`
+ * around its own transaction build/submit/confirm cycle. Neither function
+ * emits stages it doesn't itself perform — an application that wants all
+ * six, in order, calls `generateProof` then `verifyOnChain` with the same
+ * `onProgress`, since generating a proof and submitting one are already two
+ * separate calls in this SDK, not one combined operation.
+ */
+export type ProofStage =
+  | "witness_start"
+  | "witness_done"
+  | "proof_start"
+  | "proof_done"
+  | "submit_start"
+  | "submit_done";
+
+export type OnProofProgress = (stage: ProofStage) => void;
+
+/**
+ * Invokes `onProgress` for `stage`, catching and discarding anything it
+ * throws — a progress callback's own bug or failure must never abort the
+ * operation it's just reporting on (an explicit zksoroban#29 requirement).
+ * A no-op if `onProgress` wasn't supplied.
+ */
+export function emitProofStage(onProgress: OnProofProgress | undefined, stage: ProofStage): void {
+  if (!onProgress) {
+    return;
+  }
+
+  try {
+    onProgress(stage);
+  } catch {
+    // Deliberately ignored — see this function's own doc comment.
+  }
+}
+
 export interface SnarkjsProof {
   pi_a: [string, string, string];
   pi_b: [[string, string], [string, string], [string, string]];
@@ -114,6 +153,17 @@ export interface VerifyOptions {
    * previous single-attempt behavior — see {@link RetryOptions}.
    */
   retry?: RetryOptions;
+  /**
+   * Optional progress callback (zksoroban#29). `verifyOnChain` emits
+   * `submit_start` right before building the transaction and
+   * `submit_done` once a final `verified`/`txHash`/`ledger`/`fee` result
+   * is ready to return — the two stages this function actually performs.
+   * It does not emit `witness_*`/`proof_*`; those belong to
+   * {@link generateProof}, a separate call. Pass the same `onProgress` to
+   * both if an application wants all six stages, in order, across the
+   * two calls.
+   */
+  onProgress?: OnProofProgress;
 }
 
 export interface VerifyResult {
