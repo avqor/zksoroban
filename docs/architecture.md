@@ -303,6 +303,60 @@ availability or rate-limiting (see `docs/security-model.md`'s Trust
 Assumptions) — exactly the escalation this issue's timelock exists to
 put a visible, delayable window in front of.
 
+### Nullifier Registry
+
+Per [zksoroban#11](https://github.com/yusufadeagbo/zksoroban/issues/11),
+`verify_one` (the shared core of `verify_proof` and `verify_batch`)
+derives a nullifier from each proof and rejects one it has already
+accepted:
+
+```rust
+let nullifier = compute_nullifier(env, &item.proof_a); // sha256(proof_a)
+if env.storage().persistent().has(&DataKey::Nullifier(nullifier.clone())) {
+    return Err(Error::AlreadyUsed);
+}
+// ... byte parsing, expiry check, pairing check ...
+if verified {
+    env.storage().persistent().set(&DataKey::Nullifier(nullifier), &true);
+}
+```
+
+The check runs right after the rate-limit counter is updated and before
+`proof_a`/`proof_b`/`proof_c` are even parsed into curve points — a
+replay is rejected as cheaply as this contract can reject anything,
+well before the pairing check (the expensive part) ever runs. The
+nullifier is only *stored* on a successful verification, so a rejected
+or malformed proof never occupies storage.
+
+**Nullifier derivation is `sha256(proof_a)`, not the `Poseidon(proofA_x,
+proofA_y)` the issue names** — see `docs/security.md`'s finding #14 for
+the full reasoning (short version: Soroban has no ready-to-use Poseidon
+hash, only a low-level hazmat primitive that needs hand-supplied round
+constants, and a previous attempt at this issue was closed for calling
+an `env.poseidon()` method that doesn't exist). Per
+`docs/proof-format.md`'s G1 encoding, `proof_a`'s raw bytes already
+*are* `x || y` — the two 32-byte coordinates concatenated — so hashing
+`proof_a` directly is equivalent to hashing the two coordinates, no
+byte-splitting needed.
+
+**This is per-proof, not per-statement.** Groth16 proofs are
+randomized: a second, independently-generated proof of the exact same
+secret has different proof bytes, a different nullifier, and verifies
+successfully again. This closes "resubmit the same calldata" — the
+literal replay attack — not "prove knowledge of this secret more than
+once," which needs its own commitment-level tracking in the
+application if that stronger property is what it actually needs (a
+one-time claim or vote, for instance). See `docs/security.md`'s
+Guarantees and Non-Guarantees section for the precise boundary.
+
+`Nullifier(BytesN<32>)` entries live in **persistent** storage and are
+never cleaned up — [#11](https://github.com/yusufadeagbo/zksoroban/issues/11)'s
+own scope explicitly excludes nullifier expiry. Unlike the old
+`CallCount` bug (finding #6), an attacker cannot mint these for free:
+each one requires an actual successful pairing check against a real
+proof, submitted in a real, fee-paying transaction — the same bound
+`VerificationCount` (finding #11) already relies on.
+
 ## Events
 
 Both `contracts/verifier::verify_proof` and `contracts/registry::verify_proof`

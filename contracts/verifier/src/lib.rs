@@ -67,6 +67,7 @@ enum DataKey {
     VkUpdateDelay,
     PendingVkUpdate,
     Paused,
+    Nullifier(BytesN<32>),
 }
 
 /// Emitted on every `verify_proof` call, regardless of outcome.
@@ -529,6 +530,15 @@ fn verify_one(env: &Env, caller: &Address, item: &ProofItem) -> Result<bool, Err
         .temporary()
         .extend_ttl(&count_key, limits.window_size, limits.window_size);
 
+    let nullifier = compute_nullifier(env, &item.proof_a);
+    if env
+        .storage()
+        .persistent()
+        .has(&DataKey::Nullifier(nullifier.clone()))
+    {
+        return Err(Error::AlreadyUsed);
+    }
+
     let proof_a = read_g1(&item.proof_a, "proof_a");
     let proof_b = read_g2(&item.proof_b, "proof_b");
     let proof_c = read_g1(&item.proof_c, "proof_c");
@@ -570,6 +580,9 @@ fn verify_one(env: &Env, caller: &Address, item: &ProofItem) -> Result<bool, Err
     if verified {
         let commitment = compute_inputs_hash(env, &item.public_inputs);
         record_verification_attempt(env, &commitment);
+        env.storage()
+            .persistent()
+            .set(&DataKey::Nullifier(nullifier), &true);
     }
 
     Ok(verified)
@@ -611,6 +624,17 @@ fn record_verification_attempt(env: &Env, commitment: &BytesN<32>) {
     let current: u64 = env.storage().instance().get(&key).unwrap_or(0);
     let next = current + 1;
     env.storage().instance().set(&key, &next);
+}
+
+/// Derives a proof's nullifier from `proof_a`'s raw bytes for replay
+/// protection (see [zksoroban#11](https://github.com/yusufadeagbo/zksoroban/issues/11)
+/// and `docs/security.md`'s nullifier finding for why this is sha256, not
+/// the Poseidon the issue names). Per `docs/proof-format.md`'s G1
+/// encoding, `proof_a` already *is* `x || y` (32-byte big-endian
+/// coordinates, 64 bytes total) — there's nothing to split out, the raw
+/// bytes are exactly the two coordinates concatenated.
+fn compute_nullifier(env: &Env, proof_a: &Bytes) -> BytesN<32> {
+    env.crypto().sha256(proof_a).to_bytes()
 }
 
 fn compute_inputs_hash(env: &Env, public_inputs: &Vec<BytesN<32>>) -> BytesN<32> {

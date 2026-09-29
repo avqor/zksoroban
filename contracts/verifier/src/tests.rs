@@ -9,39 +9,39 @@ use zksoroban_verifier_interface::VerifierClient;
 
 const VK_ALPHA_G1: [u8; 64] = [
     37, 174, 162, 190, 147, 137, 161, 46, 208, 40, 205, 226, 35, 65, 40, 44, 27, 28, 154, 20, 14,
-    58, 206, 243, 150, 37, 97, 176, 235, 29, 70, 139, 31, 142, 73, 125, 220, 208, 55, 78, 173,
-    173, 137, 157, 225, 191, 157, 158, 114, 100, 108, 79, 210, 25, 48, 31, 197, 192, 156, 46,
-    171, 152, 229, 95,
+    58, 206, 243, 150, 37, 97, 176, 235, 29, 70, 139, 31, 142, 73, 125, 220, 208, 55, 78, 173, 173,
+    137, 157, 225, 191, 157, 158, 114, 100, 108, 79, 210, 25, 48, 31, 197, 192, 156, 46, 171, 152,
+    229, 95,
 ];
 
 const VK_BETA_G2: [u8; 128] = [
     16, 192, 41, 89, 225, 138, 98, 99, 126, 10, 17, 115, 189, 205, 208, 100, 144, 178, 104, 213,
-    204, 186, 176, 7, 121, 123, 72, 37, 204, 63, 176, 252, 3, 140, 21, 18, 253, 163, 204, 42,
-    212, 230, 81, 138, 188, 135, 93, 67, 90, 44, 33, 135, 25, 165, 93, 183, 212, 179, 30, 8, 8,
-    211, 163, 195, 41, 211, 246, 214, 39, 241, 146, 1, 159, 19, 227, 209, 71, 86, 208, 245, 123,
-    226, 249, 207, 175, 129, 207, 140, 152, 64, 207, 168, 184, 182, 65, 48, 36, 103, 94, 218, 64,
-    127, 63, 69, 90, 209, 120, 139, 128, 240, 117, 187, 108, 187, 250, 62, 162, 205, 134, 52, 210,
-    194, 91, 79, 139, 106, 240, 246,
+    204, 186, 176, 7, 121, 123, 72, 37, 204, 63, 176, 252, 3, 140, 21, 18, 253, 163, 204, 42, 212,
+    230, 81, 138, 188, 135, 93, 67, 90, 44, 33, 135, 25, 165, 93, 183, 212, 179, 30, 8, 8, 211,
+    163, 195, 41, 211, 246, 214, 39, 241, 146, 1, 159, 19, 227, 209, 71, 86, 208, 245, 123, 226,
+    249, 207, 175, 129, 207, 140, 152, 64, 207, 168, 184, 182, 65, 48, 36, 103, 94, 218, 64, 127,
+    63, 69, 90, 209, 120, 139, 128, 240, 117, 187, 108, 187, 250, 62, 162, 205, 134, 52, 210, 194,
+    91, 79, 139, 106, 240, 246,
 ];
 
 const VK_GAMMA_G2: [u8; 128] = [
     25, 142, 147, 147, 146, 13, 72, 58, 114, 96, 191, 183, 49, 251, 93, 37, 241, 170, 73, 51, 53,
-    169, 231, 18, 151, 228, 133, 183, 174, 243, 18, 194, 24, 0, 222, 239, 18, 31, 30, 118, 66,
-    106, 0, 102, 94, 92, 68, 121, 103, 67, 34, 212, 247, 94, 218, 221, 70, 222, 189, 92, 217,
-    146, 246, 237, 9, 6, 137, 208, 88, 95, 240, 117, 236, 158, 153, 173, 105, 12, 51, 149, 188,
-    75, 49, 51, 112, 179, 142, 243, 85, 172, 218, 220, 209, 34, 151, 91, 18, 200, 94, 165, 219,
-    140, 109, 235, 74, 171, 113, 128, 141, 203, 64, 143, 227, 209, 231, 105, 12, 67, 211, 123, 76,
-    230, 204, 1, 102, 250, 125, 170,
+    169, 231, 18, 151, 228, 133, 183, 174, 243, 18, 194, 24, 0, 222, 239, 18, 31, 30, 118, 66, 106,
+    0, 102, 94, 92, 68, 121, 103, 67, 34, 212, 247, 94, 218, 221, 70, 222, 189, 92, 217, 146, 246,
+    237, 9, 6, 137, 208, 88, 95, 240, 117, 236, 158, 153, 173, 105, 12, 51, 149, 188, 75, 49, 51,
+    112, 179, 142, 243, 85, 172, 218, 220, 209, 34, 151, 91, 18, 200, 94, 165, 219, 140, 109, 235,
+    74, 171, 113, 128, 141, 203, 64, 143, 227, 209, 231, 105, 12, 67, 211, 123, 76, 230, 204, 1,
+    102, 250, 125, 170,
 ];
 
 const VK_DELTA_G2: [u8; 128] = [
-    30, 191, 14, 99, 80, 96, 169, 248, 115, 42, 4, 232, 241, 172, 231, 11, 209, 255, 181, 66,
-    226, 81, 114, 203, 9, 17, 245, 14, 21, 47, 108, 131, 15, 248, 194, 120, 215, 200, 221, 17,
-    228, 29, 179, 208, 106, 116, 75, 141, 105, 71, 58, 219, 87, 21, 148, 114, 143, 19, 198, 219,
-    143, 144, 108, 56, 15, 37, 69, 95, 78, 156, 17, 210, 113, 53, 223, 118, 131, 56, 26, 36, 122,
-    22, 151, 118, 241, 78, 236, 218, 93, 11, 9, 244, 103, 165, 60, 68, 32, 134, 231, 54, 45, 60,
-    153, 212, 159, 226, 92, 108, 13, 26, 210, 168, 196, 162, 240, 251, 27, 28, 214, 57, 40, 193,
-    243, 211, 56, 95, 104, 255,
+    30, 191, 14, 99, 80, 96, 169, 248, 115, 42, 4, 232, 241, 172, 231, 11, 209, 255, 181, 66, 226,
+    81, 114, 203, 9, 17, 245, 14, 21, 47, 108, 131, 15, 248, 194, 120, 215, 200, 221, 17, 228, 29,
+    179, 208, 106, 116, 75, 141, 105, 71, 58, 219, 87, 21, 148, 114, 143, 19, 198, 219, 143, 144,
+    108, 56, 15, 37, 69, 95, 78, 156, 17, 210, 113, 53, 223, 118, 131, 56, 26, 36, 122, 22, 151,
+    118, 241, 78, 236, 218, 93, 11, 9, 244, 103, 165, 60, 68, 32, 134, 231, 54, 45, 60, 153, 212,
+    159, 226, 92, 108, 13, 26, 210, 168, 196, 162, 240, 251, 27, 28, 214, 57, 40, 193, 243, 211,
+    56, 95, 104, 255,
 ];
 
 const VK_IC0_G1: [u8; 64] = [
@@ -52,39 +52,104 @@ const VK_IC0_G1: [u8; 64] = [
 ];
 
 const VK_IC1_G1: [u8; 64] = [
-    14, 175, 26, 53, 220, 82, 18, 65, 43, 24, 73, 28, 169, 83, 160, 86, 59, 171, 175, 121, 78,
-    151, 209, 220, 243, 234, 179, 65, 226, 63, 53, 247, 14, 78, 72, 228, 67, 167, 115, 92, 178,
-    191, 32, 181, 102, 213, 116, 121, 173, 179, 91, 210, 78, 87, 214, 86, 119, 251, 37, 166, 188,
-    55, 49, 89,
+    14, 175, 26, 53, 220, 82, 18, 65, 43, 24, 73, 28, 169, 83, 160, 86, 59, 171, 175, 121, 78, 151,
+    209, 220, 243, 234, 179, 65, 226, 63, 53, 247, 14, 78, 72, 228, 67, 167, 115, 92, 178, 191, 32,
+    181, 102, 213, 116, 121, 173, 179, 91, 210, 78, 87, 214, 86, 119, 251, 37, 166, 188, 55, 49,
+    89,
 ];
 
 const VALID_PROOF_A: [u8; PROOF_A_LEN] = [
-    28, 159, 72, 150, 222, 218, 126, 226, 53, 93, 4, 80, 73, 92, 40, 120, 36, 194, 215, 167,
-    39, 53, 38, 203, 78, 55, 154, 43, 183, 51, 27, 239, 39, 116, 225, 204, 223, 113, 45, 75,
-    145, 63, 162, 251, 115, 169, 233, 211, 196, 17, 50, 95, 10, 96, 100, 87, 103, 45, 222,
-    46, 22, 79, 236, 207,
+    28, 159, 72, 150, 222, 218, 126, 226, 53, 93, 4, 80, 73, 92, 40, 120, 36, 194, 215, 167, 39,
+    53, 38, 203, 78, 55, 154, 43, 183, 51, 27, 239, 39, 116, 225, 204, 223, 113, 45, 75, 145, 63,
+    162, 251, 115, 169, 233, 211, 196, 17, 50, 95, 10, 96, 100, 87, 103, 45, 222, 46, 22, 79, 236,
+    207,
 ];
 
 const VALID_PROOF_B: [u8; PROOF_B_LEN] = [
     1, 42, 5, 66, 163, 235, 37, 249, 221, 59, 28, 26, 28, 141, 222, 136, 44, 125, 57, 205, 174,
-    171, 120, 158, 215, 5, 37, 152, 128, 47, 109, 179, 10, 195, 151, 7, 203, 209, 91, 29, 216,
-    105, 99, 216, 134, 57, 249, 38, 63, 28, 61, 16, 237, 176, 106, 59, 106, 127, 132, 150,
-    173, 249, 24, 39, 37, 42, 7, 245, 29, 242, 177, 182, 170, 101, 22, 47, 23, 147, 59, 250,
-    162, 36, 95, 66, 122, 2, 75, 26, 188, 118, 101, 74, 47, 193, 255, 168, 11, 116, 62, 79, 44,
-    18, 181, 195, 110, 255, 73, 31, 99, 67, 197, 43, 29, 151, 157, 210, 34, 247, 134, 38, 31,
-    23, 4, 3, 49, 77, 27, 13,
+    171, 120, 158, 215, 5, 37, 152, 128, 47, 109, 179, 10, 195, 151, 7, 203, 209, 91, 29, 216, 105,
+    99, 216, 134, 57, 249, 38, 63, 28, 61, 16, 237, 176, 106, 59, 106, 127, 132, 150, 173, 249, 24,
+    39, 37, 42, 7, 245, 29, 242, 177, 182, 170, 101, 22, 47, 23, 147, 59, 250, 162, 36, 95, 66,
+    122, 2, 75, 26, 188, 118, 101, 74, 47, 193, 255, 168, 11, 116, 62, 79, 44, 18, 181, 195, 110,
+    255, 73, 31, 99, 67, 197, 43, 29, 151, 157, 210, 34, 247, 134, 38, 31, 23, 4, 3, 49, 77, 27,
+    13,
 ];
 
 const VALID_PROOF_C: [u8; PROOF_A_LEN] = [
-    17, 201, 219, 26, 68, 41, 61, 217, 55, 131, 157, 11, 39, 31, 149, 251, 231, 172, 120, 223,
-    35, 49, 86, 11, 238, 214, 162, 152, 3, 170, 201, 25, 12, 55, 128, 235, 89, 16, 108, 55,
-    145, 211, 153, 105, 252, 163, 82, 244, 31, 20, 102, 144, 205, 165, 13, 28, 60, 128, 197,
-    222, 246, 69, 1, 222,
+    17, 201, 219, 26, 68, 41, 61, 217, 55, 131, 157, 11, 39, 31, 149, 251, 231, 172, 120, 223, 35,
+    49, 86, 11, 238, 214, 162, 152, 3, 170, 201, 25, 12, 55, 128, 235, 89, 16, 108, 55, 145, 211,
+    153, 105, 252, 163, 82, 244, 31, 20, 102, 144, 205, 165, 13, 28, 60, 128, 197, 222, 246, 69, 1,
+    222,
 ];
 
 const VALID_PUBLIC_INPUT: [u8; 32] = [
-    41, 23, 97, 0, 234, 169, 98, 189, 193, 254, 108, 101, 77, 106, 60, 19, 14, 150, 164, 209,
-    22, 139, 51, 132, 139, 137, 125, 197, 2, 130, 1, 51,
+    41, 23, 97, 0, 234, 169, 98, 189, 193, 254, 108, 101, 77, 106, 60, 19, 14, 150, 164, 209, 22,
+    139, 51, 132, 139, 137, 125, 197, 2, 130, 1, 51,
+];
+
+// A second, independently-generated valid proof for the same
+// poseidon_preimage circuit/VK (secret = 2, not the secret = 1 the
+// VALID_PROOF_* constants above prove) -- used by the nullifier tests to
+// confirm two distinct proofs are both accepted independently, not just
+// that the same proof once accepted stays accepted.
+const VALID_PROOF_A_2: [u8; PROOF_A_LEN] = [
+    26, 157, 98, 51, 46, 33, 183, 229, 88, 16, 86, 10, 226, 186, 4, 232, 183, 202, 12, 168, 194,
+    78, 115, 232, 218, 219, 155, 155, 212, 3, 30, 100, 24, 146, 139, 206, 15, 21, 186, 236, 74,
+    228, 89, 146, 184, 104, 10, 157, 122, 163, 174, 7, 226, 206, 245, 52, 146, 49, 172, 217, 6,
+    164, 99, 23,
+];
+
+const VALID_PROOF_B_2: [u8; PROOF_B_LEN] = [
+    1, 116, 173, 122, 99, 70, 61, 49, 7, 175, 150, 255, 135, 160, 84, 250, 130, 70, 156, 234, 154,
+    137, 55, 147, 25, 229, 249, 32, 135, 206, 118, 114, 4, 109, 21, 157, 227, 253, 128, 178, 52,
+    239, 135, 163, 32, 170, 46, 245, 222, 142, 120, 3, 253, 250, 49, 10, 67, 37, 7, 43, 24, 32, 86,
+    178, 15, 234, 193, 19, 242, 80, 79, 52, 213, 140, 42, 119, 69, 96, 64, 79, 137, 15, 57, 98, 49,
+    191, 125, 88, 155, 136, 73, 161, 204, 91, 216, 247, 4, 246, 13, 21, 4, 172, 30, 237, 238, 191,
+    0, 230, 200, 46, 112, 62, 148, 8, 77, 118, 116, 34, 249, 229, 179, 126, 102, 105, 147, 206,
+    235, 124,
+];
+
+const VALID_PROOF_C_2: [u8; PROOF_A_LEN] = [
+    38, 128, 146, 117, 160, 237, 10, 249, 15, 141, 182, 3, 194, 59, 127, 215, 177, 229, 146, 199,
+    110, 57, 100, 217, 188, 74, 221, 252, 153, 190, 6, 185, 31, 66, 12, 64, 180, 5, 49, 119, 64,
+    215, 174, 74, 92, 55, 63, 182, 223, 236, 27, 89, 104, 102, 239, 54, 148, 177, 29, 106, 181, 63,
+    243, 1,
+];
+
+const VALID_PUBLIC_INPUT_2: [u8; 32] = [
+    19, 29, 115, 207, 107, 48, 7, 154, 202, 13, 255, 106, 86, 28, 208, 238, 80, 181, 64, 135, 154,
+    190, 55, 154, 37, 160, 107, 36, 189, 226, 190, 189,
+];
+
+// A third valid proof: same secret (and so the same commitment / public
+// input) as VALID_PROOF_A/B/C, but independently generated -- Groth16
+// proving is randomized, so this has different proof bytes and therefore
+// a different nullifier, even though it proves the identical statement.
+// For tests that need two *different* successful verifications sharing
+// one commitment (verification_count), where VALID_PROOF_A_2 (a
+// different commitment entirely) wouldn't do.
+const VALID_PROOF_A_1B: [u8; PROOF_A_LEN] = [
+    40, 102, 72, 226, 209, 247, 125, 70, 182, 78, 158, 207, 203, 183, 178, 229, 196, 160, 254, 166,
+    253, 219, 189, 168, 10, 76, 246, 105, 69, 236, 206, 29, 26, 243, 244, 32, 202, 203, 124, 68,
+    63, 127, 117, 56, 206, 224, 193, 61, 26, 14, 178, 236, 116, 30, 179, 248, 147, 219, 45, 51,
+    129, 250, 150, 96,
+];
+
+const VALID_PROOF_B_1B: [u8; PROOF_B_LEN] = [
+    22, 157, 146, 161, 247, 13, 77, 96, 60, 220, 212, 81, 223, 62, 75, 95, 134, 171, 116, 236, 224,
+    151, 76, 110, 209, 150, 117, 160, 188, 52, 139, 34, 30, 185, 4, 255, 33, 240, 168, 13, 128,
+    216, 50, 166, 231, 178, 92, 44, 251, 4, 215, 180, 22, 66, 7, 56, 76, 189, 155, 61, 37, 122, 90,
+    165, 3, 90, 25, 79, 129, 142, 212, 209, 110, 92, 210, 70, 18, 131, 6, 121, 24, 235, 57, 255,
+    68, 183, 50, 45, 107, 54, 206, 12, 158, 75, 169, 230, 31, 89, 57, 68, 5, 186, 55, 117, 158,
+    120, 227, 149, 30, 223, 167, 207, 229, 197, 117, 135, 146, 21, 214, 207, 224, 84, 188, 255,
+    177, 194, 161, 62,
+];
+
+const VALID_PROOF_C_1B: [u8; PROOF_A_LEN] = [
+    2, 10, 240, 255, 192, 58, 209, 110, 224, 242, 79, 52, 127, 105, 100, 155, 23, 86, 67, 11, 111,
+    232, 139, 238, 150, 50, 156, 5, 0, 29, 230, 71, 16, 39, 217, 18, 158, 251, 197, 62, 53, 211,
+    121, 55, 118, 63, 120, 188, 1, 149, 5, 46, 194, 53, 60, 96, 122, 57, 235, 129, 145, 61, 123,
+    68,
 ];
 
 fn poseidon_vk(env: &Env) -> VerifyingKey {
@@ -154,6 +219,35 @@ fn call_with_expiry(
 
 fn call_valid(env: &Env, client: &VerifierContractClient, caller: &Address) -> bool {
     call_with_expiry(env, client, caller, u32::MAX)
+}
+
+/// Same statement/commitment as `call_valid`, but a distinct, independently
+/// generated proof (VALID_PROOF_*_1B) -- so it has its own nullifier and
+/// isn't rejected as a replay of `call_valid`'s proof.
+fn call_valid_1b(env: &Env, client: &VerifierContractClient, caller: &Address) -> bool {
+    client.verify_proof(
+        caller,
+        &Bytes::from_array(env, &VALID_PROOF_A_1B),
+        &Bytes::from_array(env, &VALID_PROOF_B_1B),
+        &Bytes::from_array(env, &VALID_PROOF_C_1B),
+        &public_inputs_with_expiry(env, u32::MAX),
+    )
+}
+
+/// A different statement/commitment entirely (VALID_PROOF_*_2, secret =
+/// 2) from `call_valid`'s.
+fn call_valid_2(env: &Env, client: &VerifierContractClient, caller: &Address) -> bool {
+    client.verify_proof(
+        caller,
+        &Bytes::from_array(env, &VALID_PROOF_A_2),
+        &Bytes::from_array(env, &VALID_PROOF_B_2),
+        &Bytes::from_array(env, &VALID_PROOF_C_2),
+        &vec![
+            env,
+            BytesN::from_array(env, &VALID_PUBLIC_INPUT_2),
+            expiry_bytes(env, u32::MAX),
+        ],
+    )
 }
 
 #[test]
@@ -285,8 +379,11 @@ fn limit_hit_returns_error() {
     let caller = Address::generate(&env);
 
     assert!(call_valid(&env, &client, &caller));
-    assert!(call_valid(&env, &client, &caller));
+    assert!(call_valid_1b(&env, &client, &caller));
 
+    // The over-limit call is rejected on the rate limit before the
+    // nullifier check runs, so reusing an already-used proof here is
+    // fine -- it never reaches AlreadyUsed.
     let third = client.try_verify_proof(
         &caller,
         &Bytes::from_array(&env, &VALID_PROOF_A),
@@ -305,6 +402,8 @@ fn window_expiry_resets_counter() {
 
     assert!(call_valid(&env, &client, &caller));
 
+    // Rejected on the rate limit before the nullifier check, so reusing
+    // the already-used proof here doesn't matter.
     let exceeded = client.try_verify_proof(
         &caller,
         &Bytes::from_array(&env, &VALID_PROOF_A),
@@ -318,7 +417,9 @@ fn window_expiry_resets_counter() {
         li.sequence_number += 11;
     });
 
-    assert!(call_valid(&env, &client, &caller));
+    // A fresh proof, not the now-used VALID_PROOF_A -- this call needs to
+    // actually succeed to prove the window reset the rate limit.
+    assert!(call_valid_1b(&env, &client, &caller));
 }
 
 #[test]
@@ -338,7 +439,9 @@ fn verify_proof_increments_the_verification_count_for_its_commitment() {
     assert!(call_valid(&env, &client, &caller));
     assert_eq!(client.verification_count(&commitment), 1u64);
 
-    assert!(call_valid(&env, &client, &caller));
+    // A second, distinct proof of the same statement -- not a replay --
+    // shares the same commitment and increments the same counter.
+    assert!(call_valid_1b(&env, &client, &caller));
     assert_eq!(client.verification_count(&commitment), 2u64);
 }
 
@@ -349,8 +452,10 @@ fn verification_count_is_shared_across_different_callers_submitting_the_same_com
     let caller_b = Address::generate(&env);
     let commitment = compute_inputs_hash(&env, &public_inputs_with_expiry(&env, u32::MAX));
 
+    // Two distinct proofs of the same statement, one per caller -- not
+    // the same caller/proof pair replayed.
     assert!(call_valid(&env, &client, &caller_a));
-    assert!(call_valid(&env, &client, &caller_b));
+    assert!(call_valid_1b(&env, &client, &caller_b));
 
     assert_eq!(client.verification_count(&commitment), 2u64);
 }
@@ -361,14 +466,41 @@ fn verification_count_does_not_leak_across_distinct_commitments() {
     env.ledger().with_mut(|li| li.sequence_number = 100);
     let caller = Address::generate(&env);
 
-    assert!(call_with_expiry(&env, &client, &caller, 1000));
-    assert!(call_with_expiry(&env, &client, &caller, 2000));
+    // Two genuinely distinct proofs (not the same proof replayed with a
+    // different expiry -- expiry isn't bound into the proof itself, so
+    // that would just be the same nullifier twice) for two different
+    // commitments.
+    let public_inputs_1 = vec![
+        &env,
+        BytesN::from_array(&env, &VALID_PUBLIC_INPUT),
+        expiry_bytes(&env, 1000),
+    ];
+    let public_inputs_2 = vec![
+        &env,
+        BytesN::from_array(&env, &VALID_PUBLIC_INPUT_2),
+        expiry_bytes(&env, 2000),
+    ];
 
-    let commitment_1000 = compute_inputs_hash(&env, &public_inputs_with_expiry(&env, 1000));
-    let commitment_2000 = compute_inputs_hash(&env, &public_inputs_with_expiry(&env, 2000));
+    assert!(client.verify_proof(
+        &caller,
+        &Bytes::from_array(&env, &VALID_PROOF_A),
+        &Bytes::from_array(&env, &VALID_PROOF_B),
+        &Bytes::from_array(&env, &VALID_PROOF_C),
+        &public_inputs_1,
+    ));
+    assert!(client.verify_proof(
+        &caller,
+        &Bytes::from_array(&env, &VALID_PROOF_A_2),
+        &Bytes::from_array(&env, &VALID_PROOF_B_2),
+        &Bytes::from_array(&env, &VALID_PROOF_C_2),
+        &public_inputs_2,
+    ));
 
-    assert_eq!(client.verification_count(&commitment_1000), 1u64);
-    assert_eq!(client.verification_count(&commitment_2000), 1u64);
+    let commitment_1 = compute_inputs_hash(&env, &public_inputs_1);
+    let commitment_2 = compute_inputs_hash(&env, &public_inputs_2);
+
+    assert_eq!(client.verification_count(&commitment_1), 1u64);
+    assert_eq!(client.verification_count(&commitment_2), 1u64);
 }
 
 #[test]
@@ -396,14 +528,22 @@ fn verify_batch_increments_the_verification_count_for_each_item() {
     env.ledger().with_mut(|li| li.sequence_number = 100);
     let caller = Address::generate(&env);
 
+    // Two distinct proofs of the same statement -- not the same item
+    // cloned, which would replay-reject on the second occurrence.
     let item = ProofItem {
         proof_a: Bytes::from_array(&env, &VALID_PROOF_A),
         proof_b: Bytes::from_array(&env, &VALID_PROOF_B),
         proof_c: Bytes::from_array(&env, &VALID_PROOF_C),
         public_inputs: public_inputs_with_expiry(&env, 1000),
     };
+    let item_1b = ProofItem {
+        proof_a: Bytes::from_array(&env, &VALID_PROOF_A_1B),
+        proof_b: Bytes::from_array(&env, &VALID_PROOF_B_1B),
+        proof_c: Bytes::from_array(&env, &VALID_PROOF_C_1B),
+        public_inputs: public_inputs_with_expiry(&env, 1000),
+    };
 
-    client.verify_batch(&caller, &vec![&env, item.clone(), item.clone()]);
+    client.verify_batch(&caller, &vec![&env, item, item_1b]);
 
     let commitment = compute_inputs_hash(&env, &public_inputs_with_expiry(&env, 1000));
     assert_eq!(client.verification_count(&commitment), 2u64);
@@ -453,7 +593,10 @@ fn verification_count_is_not_refreshed_by_a_second_call() {
     env.ledger().with_mut(|li| {
         li.sequence_number += 10;
     });
-    assert!(call_valid(&env, &client, &caller));
+    // A second, distinct proof of the same statement, not a replay --
+    // the counter keeps accumulating across ledger advances rather than
+    // resetting, which is what this test actually checks.
+    assert!(call_valid_1b(&env, &client, &caller));
 
     assert_eq!(client.verification_count(&commitment), 2u64);
 }
@@ -549,7 +692,8 @@ fn call_count_ttl_is_refreshed_by_a_second_call_in_the_same_window() {
     env.ledger().with_mut(|li| {
         li.sequence_number += 10;
     });
-    assert!(call_valid(&env, &client, &caller));
+    // A distinct proof, not a replay of the first call's.
+    assert!(call_valid_1b(&env, &client, &caller));
 
     let ttl_after_second_call = env.as_contract(&client.address, || {
         env.storage().temporary().get_ttl(&count_key)
@@ -620,7 +764,19 @@ fn call_count_storage_does_not_grow_unbounded_across_many_callers_and_windows() 
 
         for _ in 0..CALLERS {
             let caller = Address::generate(&env);
-            assert!(call_valid(&env, &client, &caller));
+            // This test is purely about CallCount storage, not about
+            // verification succeeding -- rate-limit accounting happens
+            // before the nullifier check regardless of outcome, so
+            // reusing the same proof across all 100 calls (which the
+            // nullifier check rejects after the first) doesn't affect
+            // what's being asserted below.
+            let _ = client.try_verify_proof(
+                &caller,
+                &Bytes::from_array(&env, &VALID_PROOF_A),
+                &Bytes::from_array(&env, &VALID_PROOF_B),
+                &Bytes::from_array(&env, &VALID_PROOF_C),
+                &public_inputs_with_expiry(&env, u32::MAX),
+            );
             keys.push(call_count_key(&env, &caller, WINDOW_SIZE));
         }
     }
@@ -642,8 +798,10 @@ fn separate_callers_have_independent_counters() {
     let alice = Address::generate(&env);
     let bob = Address::generate(&env);
 
+    // Two distinct proofs -- each caller's own call must succeed
+    // independently, not just avoid a rate-limit collision.
     assert!(call_valid(&env, &client, &alice));
-    assert!(call_valid(&env, &client, &bob));
+    assert!(call_valid_1b(&env, &client, &bob));
 }
 
 #[test]
@@ -658,7 +816,7 @@ fn admin_can_update_limits() {
 
     let caller = Address::generate(&env);
     assert!(call_valid(&env, &client, &caller));
-    assert!(call_valid(&env, &client, &caller));
+    assert!(call_valid_1b(&env, &client, &caller));
 }
 
 #[test]
@@ -1076,6 +1234,117 @@ fn propose_vk_update_rejects_call_with_no_authorization() {
     client.propose_vk_update(&poseidon_vk(&env));
 }
 
+// Nullifier / replay-protection tests (zksoroban#11). VALID_PROOF_* and
+// VALID_PROOF_*_2 are two independently-generated, genuinely distinct
+// valid proofs for the same poseidon_preimage circuit and VK (secret = 1
+// and secret = 2 respectively) -- not the same proof submitted twice with
+// different framing.
+
+#[test]
+fn fresh_proof_is_accepted_and_replay_is_rejected() {
+    let (env, _admin, client) = setup(10, 100);
+    env.ledger().with_mut(|li| li.sequence_number = 100);
+    let caller = Address::generate(&env);
+
+    assert!(call_valid(&env, &client, &caller));
+
+    let result = client.try_verify_proof(
+        &caller,
+        &Bytes::from_array(&env, &VALID_PROOF_A),
+        &Bytes::from_array(&env, &VALID_PROOF_B),
+        &Bytes::from_array(&env, &VALID_PROOF_C),
+        &public_inputs_with_expiry(&env, u32::MAX),
+    );
+
+    assert_eq!(result, Err(Ok(Error::AlreadyUsed)));
+}
+
+#[test]
+fn replay_is_rejected_even_from_a_different_caller() {
+    // The nullifier is derived from the proof itself, not the caller --
+    // it isn't a per-caller allowance, it's "this proof, once, ever."
+    let (env, _admin, client) = setup(10, 100);
+    env.ledger().with_mut(|li| li.sequence_number = 100);
+    let first_caller = Address::generate(&env);
+    let second_caller = Address::generate(&env);
+
+    assert!(call_valid(&env, &client, &first_caller));
+
+    let result = client.try_verify_proof(
+        &second_caller,
+        &Bytes::from_array(&env, &VALID_PROOF_A),
+        &Bytes::from_array(&env, &VALID_PROOF_B),
+        &Bytes::from_array(&env, &VALID_PROOF_C),
+        &public_inputs_with_expiry(&env, u32::MAX),
+    );
+
+    assert_eq!(result, Err(Ok(Error::AlreadyUsed)));
+}
+
+#[test]
+fn two_different_valid_proofs_both_succeed_independently() {
+    let (env, _admin, client) = setup(10, 100);
+    env.ledger().with_mut(|li| li.sequence_number = 100);
+    let caller = Address::generate(&env);
+
+    // Two proofs of two entirely different statements (different
+    // secrets, different commitments), not just different randomness
+    // over the same one.
+    assert!(call_valid(&env, &client, &caller));
+    assert!(call_valid_2(&env, &client, &caller));
+}
+
+#[test]
+fn nullifier_check_runs_before_the_pairing_check_so_a_replay_does_not_re_verify() {
+    // Same intent as fresh_proof_is_accepted_and_replay_is_rejected, but
+    // makes the *ordering* explicit: replaying a real, otherwise-valid
+    // proof is rejected as AlreadyUsed, not silently re-accepted as
+    // Ok(true) a second time.
+    let (env, _admin, client) = setup(10, 100);
+    env.ledger().with_mut(|li| li.sequence_number = 100);
+    let caller = Address::generate(&env);
+
+    let first = client.try_verify_proof(
+        &caller,
+        &Bytes::from_array(&env, &VALID_PROOF_A),
+        &Bytes::from_array(&env, &VALID_PROOF_B),
+        &Bytes::from_array(&env, &VALID_PROOF_C),
+        &public_inputs_with_expiry(&env, u32::MAX),
+    );
+    let second = client.try_verify_proof(
+        &caller,
+        &Bytes::from_array(&env, &VALID_PROOF_A),
+        &Bytes::from_array(&env, &VALID_PROOF_B),
+        &Bytes::from_array(&env, &VALID_PROOF_C),
+        &public_inputs_with_expiry(&env, u32::MAX),
+    );
+
+    assert_eq!(first, Ok(Ok(true)));
+    assert_eq!(second, Err(Ok(Error::AlreadyUsed)));
+}
+
+#[test]
+fn replay_via_verify_batch_is_also_rejected() {
+    let (env, _admin, client) = setup(10, 100);
+    env.ledger().with_mut(|li| li.sequence_number = 100);
+    let caller = Address::generate(&env);
+
+    assert!(call_valid(&env, &client, &caller));
+
+    let item = ProofItem {
+        proof_a: Bytes::from_array(&env, &VALID_PROOF_A),
+        proof_b: Bytes::from_array(&env, &VALID_PROOF_B),
+        proof_c: Bytes::from_array(&env, &VALID_PROOF_C),
+        public_inputs: public_inputs_with_expiry(&env, u32::MAX),
+    };
+    let results = client.verify_batch(&caller, &vec![&env, item]);
+
+    // Unlike verify_proof, verify_batch never fails the whole call for a
+    // per-proof rejection (see its doc comment) -- AlreadyUsed collapses
+    // to false in the returned vec, same as any other per-proof Err.
+    assert_eq!(results, vec![&env, false]);
+}
+
 // verification_result event coverage: one test per outcome path that
 // actually returns via Ok(...) — wrong input count, malformed expiry
 // encoding (folded into the tampered/wrong-input tests below since there's
@@ -1302,6 +1571,17 @@ fn valid_batch_item(env: &Env) -> ProofItem {
     }
 }
 
+/// Same commitment as `valid_batch_item`, but VALID_PROOF_*_1B's distinct
+/// proof bytes -- its own nullifier, not a replay of `valid_batch_item`'s.
+fn valid_batch_item_1b(env: &Env) -> ProofItem {
+    ProofItem {
+        proof_a: Bytes::from_array(env, &VALID_PROOF_A_1B),
+        proof_b: Bytes::from_array(env, &VALID_PROOF_B_1B),
+        proof_c: Bytes::from_array(env, &VALID_PROOF_C_1B),
+        public_inputs: public_inputs_with_expiry(env, u32::MAX),
+    }
+}
+
 #[test]
 fn verify_batch_returns_results_in_order() {
     let (env, _admin, client) = setup(10, 100);
@@ -1314,11 +1594,11 @@ fn verify_batch_returns_results_in_order() {
         proof_a: Bytes::from_array(&env, &tampered),
         ..valid.clone()
     };
+    // A distinct proof, not a replay of `valid` -- the third slot needs
+    // its own nullifier to succeed rather than being rejected as reuse.
+    let valid_1b = valid_batch_item_1b(&env);
 
-    let results = client.verify_batch(
-        &caller,
-        &vec![&env, valid.clone(), tampered_item, valid],
-    );
+    let results = client.verify_batch(&caller, &vec![&env, valid, tampered_item, valid_1b]);
 
     assert_eq!(results, vec![&env, true, false, true]);
 }
@@ -1328,8 +1608,13 @@ fn verify_batch_applies_rate_limit_within_batch() {
     let (env, _admin, client) = setup(2, 100);
     let caller = Address::generate(&env);
     let item = valid_batch_item(&env);
+    let item_1b = valid_batch_item_1b(&env);
 
-    let results = client.verify_batch(&caller, &vec![&env, item.clone(), item.clone(), item]);
+    // Two distinct proofs succeed (consuming the max_calls=2 budget),
+    // then a third call -- reusing the first proof is fine here, since
+    // it's rejected on the rate limit before the nullifier check ever
+    // runs -- hits RateLimitExceeded, which collapses to false.
+    let results = client.verify_batch(&caller, &vec![&env, item.clone(), item_1b, item]);
 
     assert_eq!(results, vec![&env, true, true, false]);
 }

@@ -85,6 +85,12 @@ proofA = be32(pi_a[0]) || be32(pi_a[1])
 proofC = be32(pi_c[0]) || be32(pi_c[1])
 ```
 
+`proofA`'s replay-nullifier ([zksoroban#11](https://github.com/yusufadeagbo/zksoroban/issues/11))
+is `sha256(proofA)` — since `proofA` already *is* `x || y` per this
+encoding, that's the same thing as hashing the two coordinates
+concatenated, with nothing extra to split out. See
+`docs/architecture.md`'s "Nullifier Registry" section.
+
 ## G2 Encoding
 
 The subtle part is G2.
