@@ -15,6 +15,7 @@ import { withRetry } from "./retry.js";
 import { formatProof } from "./proof.js";
 import { createLogger, defaultLogger, Logger, LogHandler } from "./logger.js";
 import {
+  assertValidNetworkConfig,
   ContractConfig,
   emitProofStage,
   NetworkConfig,
@@ -251,6 +252,8 @@ function resolveCalldata(opts: VerifyOptions): SorobanProofCalldata {
 }
 
 export async function verifyOnChain(opts: VerifyOptions): Promise<VerifyResult> {
+  assertValidNetworkConfig(opts.network);
+
   const logger: Logger = opts.logger ? createLogger("DEBUG", opts.logger) : defaultLogger;
   const calldata = resolveCalldata(opts);
   validateCalldata(calldata);
@@ -401,6 +404,8 @@ export async function verifyOnChain(opts: VerifyOptions): Promise<VerifyResult> 
  * ```
  */
 export async function verifyBatchOnChain(opts: VerifyBatchOptions): Promise<VerifyBatchResult> {
+  assertValidNetworkConfig(opts.network);
+
   const logger: Logger = opts.logger ? createLogger("DEBUG", opts.logger) : defaultLogger;
 
   if (opts.items.length === 0) {
@@ -555,6 +560,8 @@ export interface EstimateVerifyFeeResult {
  * ```
  */
 export async function estimateVerifyFee(opts: VerifyOptions): Promise<EstimateVerifyFeeResult> {
+  assertValidNetworkConfig(opts.network);
+
   const logger: Logger = opts.logger ? createLogger("DEBUG", opts.logger) : defaultLogger;
   const calldata = resolveCalldata(opts);
   validateCalldata(calldata);
@@ -659,6 +666,8 @@ function resolveRegistryCalldata(opts: VerifyViaRegistryOptions): SorobanProofCa
  * ```
  */
 export async function verifyViaRegistry(opts: VerifyViaRegistryOptions): Promise<boolean> {
+  assertValidNetworkConfig(opts.network);
+
   const logger: Logger = opts.logger ? createLogger("DEBUG", opts.logger) : defaultLogger;
   const calldata = resolveRegistryCalldata(opts);
   validateCalldata(calldata);
@@ -765,6 +774,8 @@ export async function verifyViaRegistry(opts: VerifyViaRegistryOptions): Promise
 export async function verifyBatchViaRegistry(
   opts: VerifyBatchViaRegistryOptions
 ): Promise<boolean[]> {
+  assertValidNetworkConfig(opts.network);
+
   const logger: Logger = opts.logger ? createLogger("DEBUG", opts.logger) : defaultLogger;
 
   if (opts.items.length === 0) {
@@ -883,6 +894,8 @@ export interface GetContractConfigOptions {
 export async function getContractConfig(
   opts: GetContractConfigOptions
 ): Promise<ContractConfig> {
+  assertValidNetworkConfig(opts.network);
+
   const logger: Logger = opts.logger ? createLogger("DEBUG", opts.logger) : defaultLogger;
 
   try {

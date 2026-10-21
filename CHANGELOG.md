@@ -18,6 +18,15 @@ sense.
 
 ### Added
 
+- **sdk**: `validateNetworkConfig(network): ConfigError[]` — shape-checks
+  a `NetworkConfig`'s `rpcUrl` (a syntactically valid `http:`/`https:`
+  URL), `networkPassphrase` (non-empty), and `contractId` (a well-formed
+  56-character Stellar contract address), returning every problem found
+  or `[]` if there are none. New `ConfigValidationError` (carrying the
+  same `errors` array) and `ConfigError` (`{ field, value, reason }`)
+  types. Deliberately not HTTPS-only, unlike the issue's literal wording
+  — the `LOCAL` preset ships with `http://localhost:8000/rpc` by design.
+  See [docs/architecture.md](docs/architecture.md#network-configuration-validation) (#109).
 - **sdk**: optional `onProgress` progress callback on `generateProof`
   (`@zksoroban/sdk/browser`) and `verifyOnChain`, reporting the real
   `witness_start`/`witness_done`/`proof_start`/`proof_done` and
@@ -120,6 +129,14 @@ sense.
 
 ### Changed
 
+- **sdk, BREAKING**: every RPC-touching SDK function (`verifyOnChain`,
+  `verifyBatchOnChain`, `verifyViaRegistry`, `verifyBatchViaRegistry`,
+  `estimateVerifyFee`, `getContractConfig`, `getContractVersion`) now
+  calls `validateNetworkConfig` on its `network` as the first thing it
+  does, throwing `ConfigValidationError` if the config is malformed —
+  including a bare, unmodified `MAINNET`/`LOCAL` preset's intentionally
+  empty `contractId`, which previously would have failed later, less
+  clearly, once the call actually reached the RPC layer (#109).
 - **sdk, BREAKING**: every RPC-touching SDK function (`verifyOnChain`,
   `verifyBatchOnChain`, `verifyViaRegistry`, `verifyBatchViaRegistry`,
   `estimateVerifyFee`, `getContractConfig`, `getContractVersion`) now

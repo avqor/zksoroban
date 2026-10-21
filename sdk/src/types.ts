@@ -214,6 +214,88 @@ export const LOCAL: NetworkConfig = {
   contractId: ""
 };
 
+/**
+ * One problem `validateNetworkConfig` found with a {@link NetworkConfig}.
+ */
+export interface ConfigError {
+  /** Which `NetworkConfig` field is invalid: `"rpcUrl"`, `"networkPassphrase"`, or `"contractId"`. */
+  field: string;
+  /** The actual value that was rejected. */
+  value: unknown;
+  /** Human-readable explanation of what's wrong with it. */
+  reason: string;
+}
+
+// A Soroban contract address: "C" followed by 55 base32 characters (56
+// total) — the same pattern demo/src/run.ts already validates its own
+// contract-address prompt against.
+const CONTRACT_ID_PATTERN = /^C[A-Z2-7]{55}$/;
+
+/**
+ * Check a {@link NetworkConfig}'s shape — not whether it's actually
+ * reachable or correct (that's {@link checkNetwork}, zksoroban#87, and
+ * the `NetworkMismatchError` every RPC-touching function already throws on
+ * a passphrase mismatch against what the RPC server itself reports) — and
+ * return every problem found, or `[]` if there are none.
+ *
+ * Deliberately **does not** require `rpcUrl` to be HTTPS specifically,
+ * despite zksoroban#109's literal wording ("a valid HTTPS URL"): the
+ * {@link LOCAL} preset ships with `http://localhost:8000/rpc` by design
+ * (a local `stellar container start local` quickstart node), and every
+ * RPC-touching function already has explicit `allowHttp` support for
+ * exactly this case. Requiring HTTPS here would make that already-shipped,
+ * documented preset permanently fail validation. `rpcUrl` must still be a
+ * syntactically valid URL using `http:` or `https:`.
+ *
+ * `contractId` being empty (as {@link MAINNET} and {@link LOCAL} both ship,
+ * also by design — see their own doc comments) *is* flagged as an error
+ * here: unlike a merely-incomplete-for-now placeholder, an empty
+ * `contractId` can never target a real contract, and catching that
+ * immediately, with a clear message, is exactly what this issue asks for
+ * — the alternative is the same failure surfacing many RPC round-trips
+ * later as an opaque "contract not found."
+ */
+export function validateNetworkConfig(config: NetworkConfig): ConfigError[] {
+  const errors: ConfigError[] = [];
+
+  if (typeof config.rpcUrl !== "string" || config.rpcUrl.length === 0) {
+    errors.push({ field: "rpcUrl", value: config.rpcUrl, reason: "must be a non-empty string" });
+  } else {
+    let protocol: string | undefined;
+    try {
+      protocol = new URL(config.rpcUrl).protocol;
+    } catch {
+      errors.push({ field: "rpcUrl", value: config.rpcUrl, reason: "is not a valid URL" });
+    }
+
+    if (protocol !== undefined && protocol !== "http:" && protocol !== "https:") {
+      errors.push({
+        field: "rpcUrl",
+        value: config.rpcUrl,
+        reason: `must use the http or https scheme (received "${protocol}")`
+      });
+    }
+  }
+
+  if (typeof config.networkPassphrase !== "string" || config.networkPassphrase.trim().length === 0) {
+    errors.push({
+      field: "networkPassphrase",
+      value: config.networkPassphrase,
+      reason: "must be a non-empty string"
+    });
+  }
+
+  if (typeof config.contractId !== "string" || !CONTRACT_ID_PATTERN.test(config.contractId)) {
+    errors.push({
+      field: "contractId",
+      value: config.contractId,
+      reason: "must be a valid Stellar contract address (56 characters, starting with \"C\")"
+    });
+  }
+
+  return errors;
+}
+
 export interface VerifyOptions {
   network: NetworkConfig;
   keypair: Keypair;
@@ -386,7 +468,12 @@ export enum SorobanZkErrorCode {
   // from "this data is just garbage/truncated" — a real, actionable
   // difference for an application deciding how to react.
   SERIALIZED_PROOF_VERSION_MISMATCH = "SERIALIZED_PROOF_VERSION_MISMATCH",
-  CORRUPTED_SERIALIZED_PROOF = "CORRUPTED_SERIALIZED_PROOF"
+  CORRUPTED_SERIALIZED_PROOF = "CORRUPTED_SERIALIZED_PROOF",
+  // A NetworkConfig failed validateNetworkConfig's shape checks
+  // (zksoroban#109) — distinct from NETWORK_MISMATCH, which is about a
+  // syntactically-valid NetworkConfig that just doesn't match what the RPC
+  // server itself reports.
+  INVALID_NETWORK_CONFIG = "INVALID_NETWORK_CONFIG"
 }
 
 export class SorobanZkError extends Error {
@@ -419,6 +506,37 @@ export class NetworkMismatchError extends SorobanZkError {
       SorobanZkErrorCode.NETWORK_MISMATCH
     );
     this.name = "NetworkMismatchError";
+  }
+}
+
+/**
+ * Thrown by every RPC-touching SDK function (zksoroban#109) when
+ * {@link validateNetworkConfig} finds at least one problem with the
+ * `network` it was given. `errors` carries every problem found, not just
+ * the first — the same information `validateNetworkConfig` itself returns.
+ */
+export class ConfigValidationError extends SorobanZkError {
+  constructor(public errors: ConfigError[]) {
+    super(
+      `Invalid NetworkConfig: ${errors.map((error) => `${error.field} ${error.reason}`).join("; ")}`,
+      SorobanZkErrorCode.INVALID_NETWORK_CONFIG
+    );
+    this.name = "ConfigValidationError";
+  }
+}
+
+/**
+ * Validates `network` and throws {@link ConfigValidationError} if
+ * {@link validateNetworkConfig} found any problems. Called as the first
+ * thing every RPC-touching SDK function does (zksoroban#109), so a
+ * misconfigured `NetworkConfig` is caught immediately with a clear
+ * message naming the bad field, instead of failing several RPC
+ * round-trips later with an opaque error.
+ */
+export function assertValidNetworkConfig(network: NetworkConfig): void {
+  const errors = validateNetworkConfig(network);
+  if (errors.length > 0) {
+    throw new ConfigValidationError(errors);
   }
 }
 

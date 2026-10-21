@@ -1,7 +1,14 @@
 import { Account, Contract, Keypair, TransactionBuilder, rpc, scValToNative } from "@stellar/stellar-sdk";
 
 import { withRetry } from "./retry.js";
-import { NetworkConfig, NetworkMismatchError, RetryOptions, SorobanZkError, SorobanZkErrorCode } from "./types.js";
+import {
+  assertValidNetworkConfig,
+  NetworkConfig,
+  NetworkMismatchError,
+  RetryOptions,
+  SorobanZkError,
+  SorobanZkErrorCode
+} from "./types.js";
 
 const EXPECTED_CONTRACT_VERSION = "0.1.0";
 
@@ -9,6 +16,8 @@ export async function getContractVersion(
   network: NetworkConfig,
   retry?: RetryOptions
 ): Promise<string> {
+  assertValidNetworkConfig(network);
+
   try {
     const server = withRetry(
       new rpc.Server(network.rpcUrl, { allowHttp: network.rpcUrl.startsWith("http://") }),

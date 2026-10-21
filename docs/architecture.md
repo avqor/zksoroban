@@ -96,6 +96,7 @@ Public API:
 - `getContractConfig(opts): Promise<ContractConfig>`
 - `getContractVersion(network, retry?): Promise<string>`
 - `withRetry` / `RetryOptions` — opt-in exponential-backoff retries for transient RPC failures (see below)
+- `validateNetworkConfig(network): ConfigError[]` — shape-validates a `NetworkConfig`; every RPC-touching function above calls this and throws `ConfigValidationError` on failure (see "Network Configuration Validation" below)
 
 See [Batch Verification](#batch-verification) below for the two batch functions.
 
@@ -140,6 +141,53 @@ pointed at the wrong network — before building any transaction. This is
 exactly the class of mistake centralizing network config exists to
 prevent: an `rpcUrl` pointed at one network with a `contractId` left
 over from another.
+
+### Network Configuration Validation
+
+Per [zksoroban#109](https://github.com/yusufadeagbo/zksoroban/issues/109),
+every RPC-touching SDK function also validates the *shape* of `network`
+before doing anything else — not whether it's reachable or correct (that's
+`checkNetwork`, zksoroban#87, and the `networkPassphrase` check above),
+just whether it's well-formed enough to possibly work at all:
+
+```ts
+import { TESTNET, verifyOnChain } from "@zksoroban/sdk";
+
+try {
+  await verifyOnChain({ network: { ...TESTNET, contractId: "" }, keypair, bundle });
+} catch (err) {
+  if (err.name === "ConfigValidationError") {
+    console.log(err.errors); // [{ field: "contractId", value: "", reason: "..." }]
+  }
+}
+```
+
+`validateNetworkConfig(network): ConfigError[]` checks `rpcUrl` (a
+syntactically valid URL using `http:` or `https:` — see below),
+`networkPassphrase` (non-empty), and `contractId` (a well-formed Stellar
+contract address: 56 characters, starting with `"C"`), returning every
+problem found, or `[]` if there are none. Every RPC-touching function
+calls it as the very first thing it does and throws
+`ConfigValidationError` (carrying the same `errors` array) if any are
+found — surfacing a typo or an unfilled-in preset immediately, with a
+clear message naming the exact bad field, instead of failing several RPC
+round-trips later with an opaque error.
+
+This means calling any RPC-touching function with a bare, unmodified
+`MAINNET` or `LOCAL` preset (see above — both ship with an intentionally
+empty `contractId`, and `MAINNET` with an empty `rpcUrl` too) now fails
+immediately with `ConfigValidationError` naming exactly which field needs
+filling in, rather than an opaque failure once the call actually reaches
+the RPC layer.
+
+**Deliberately not HTTPS-only**, despite the issue's literal wording: `rpcUrl`
+may use `http:` or `https:`. Requiring HTTPS specifically would make the
+`LOCAL` preset's own `http://localhost:8000/rpc` — shipped this way on
+purpose, for a local `stellar container start local` quickstart node, with
+`allowHttp` support already built into every RPC-touching function — fail
+validation permanently. That's the one place this implementation
+deliberately diverges from the issue's exact text, in favor of not
+breaking an already-shipped, documented preset.
 
 ### Retry & Exponential Backoff
 
