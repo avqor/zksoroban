@@ -10,6 +10,7 @@ import {
   ZkInputError,
   diffProofs,
   formatProof,
+  formatProofResult,
   poseidon,
   verifyViaRegistry
 } from "@zksoroban/sdk";
@@ -130,10 +131,19 @@ async function verifyAndReport(opts: {
 }): Promise<void> {
   opts.log("simulating verify_proof against the registry...", "verbose");
 
+  // zksoroban#107: formatProofResult is the new, additive Result-based
+  // alternative to formatProof (still used elsewhere in this file,
+  // unchanged) — explicit ok/err handling instead of try/catch.
+  const formatted = formatProofResult(opts.proof, opts.publicSignals);
+  if (formatted.isErr()) {
+    console.log(`✗ formatProof failed: ${formatted.error.code} ${formatted.error.message}`);
+    return;
+  }
+
   const verified = await verifyViaRegistry({
     network: opts.network,
     circuitId: POSEIDON_PREIMAGE_CIRCUIT_ID,
-    calldata: formatProof(opts.proof, opts.publicSignals)
+    calldata: formatted.value
   });
 
   console.log(`✓ Proof verified on-chain: ${verified}`);

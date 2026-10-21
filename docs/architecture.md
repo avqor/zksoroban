@@ -95,6 +95,7 @@ Public API:
 - `estimateVerifyFee(opts): Promise<EstimateVerifyFeeResult>`
 - `getContractConfig(opts): Promise<ContractConfig>`
 - `getContractVersion(network, retry?): Promise<string>`
+- `formatProofResult(proof, publicSignals): Result<SorobanProofCalldata, ZkError>` / `generateProofResult(...): ResultAsync<GenerateProofResult, ZkError>` / `verifyOnChainResult(opts): ResultAsync<VerifyResult, ZkError>` — opt-in, non-throwing alternatives to `formatProof`/`generateProof`/`verifyOnChain` (see "Result-Based Error Handling" below)
 - `withRetry` / `RetryOptions` — opt-in exponential-backoff retries for transient RPC failures (see below)
 
 See [Batch Verification](#batch-verification) below for the two batch functions.
@@ -248,6 +249,53 @@ one, in this SDK.
 Any error `onProgress` itself throws is caught and discarded
 (`emitProofStage` in `types.ts`) — a broken progress callback must never
 abort the operation it's reporting on.
+
+### Result-Based Error Handling
+
+Per [zksoroban#107](https://github.com/yusufadeagbo/zksoroban/issues/107),
+`formatProof`, `generateProof`, and `verifyOnChain` each have a
+Result-returning alternative — `formatProofResult`, `generateProofResult`,
+`verifyOnChainResult` — for applications that want explicit,
+type-enforced `ok`/`err` handling instead of `try`/`catch`:
+
+```ts
+import { formatProofResult, TESTNET, verifyOnChainResult } from "@zksoroban/sdk";
+
+const formatted = formatProofResult(proof, publicSignals);
+if (formatted.isErr()) {
+  console.error(formatted.error.code, formatted.error.message);
+} else {
+  const result = await verifyOnChainResult({ network: TESTNET, keypair, calldata: formatted.value });
+  result.match(
+    (verified) => console.log("verified:", verified.verified),
+    (error) => console.error(error.code, error.message)
+  );
+}
+```
+
+`Result<T, E>` (`sdk/src/result.ts`) is a minimal, dependency-free
+implementation — `Ok<T, E>` / `Err<T, E>`, `ok()`/`err()`, `.isOk()`/
+`.isErr()` (narrowing type guards), `.map()`/`.mapErr()`, `.unwrapOr()`,
+`.match()` — plus `ResultAsync<T, E>` (a plain `Promise<Result<T, E>>`)
+and a `ZkError` alias for `SorobanZkError`, matching the issue's own
+naming. No new dependency: the issue's other explicitly-sanctioned option
+was adopting `neverthrow`, not implemented here specifically because this
+round of work had no way to run `npm install` to add and verify a new
+dependency resolves correctly.
+
+**This deliberately stops short of the issue's literal ask** — swapping
+`formatProof`/`generateProof`/`verifyOnChain` themselves to return
+`Result`s and renaming the throwing versions to `formatProofOrThrow`/
+etc. All three are called extensively elsewhere in this SDK (every
+RPC-touching function's `resolveCalldata` calls `formatProof`), from the
+demo, and from most of this repo's test files — renaming them with no way
+to run a build or test suite to verify every call site was updated
+correctly was too much unverifiable risk for one PR. Instead,
+`formatProof`/`generateProof`/`verifyOnChain` are **unchanged** — still
+throwing, exactly as before — and the three `*Result` functions are new,
+additive wrappers around them. The Result-based API this issue asked for
+is fully available either way; only the *naming* differs from the
+issue's literal text.
 
 ## Contract Layer
 

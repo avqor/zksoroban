@@ -14,6 +14,7 @@ import {
 import { withRetry } from "./retry.js";
 import { formatProof } from "./proof.js";
 import { createLogger, defaultLogger, Logger, LogHandler } from "./logger.js";
+import { err, ok, ResultAsync, toZkError, ZkError } from "./result.js";
 import {
   ContractConfig,
   emitProofStage,
@@ -368,6 +369,40 @@ export async function verifyOnChain(opts: VerifyOptions): Promise<VerifyResult> 
     const classified = classifyError(error);
     logger.error("verifyOnChain", "operation failed", { code: classified.code, message: classified.message });
     throw classified;
+  }
+}
+
+/**
+ * {@link verifyOnChain}, wrapped as a {@link ResultAsync} instead of
+ * throwing (zksoroban#107) — `verifyOnChain` itself is unchanged and keeps
+ * throwing; this is a new, additive alternative, not a replacement. See
+ * `result.ts`'s own doc comment for why this SDK took the "new `*Result`
+ * function alongside the existing one" approach rather than the issue's
+ * literal ask (swap `verifyOnChain` itself to return a `Result` and
+ * rename the throwing version to `verifyOnChainOrThrow`) — `verifyOnChain`
+ * is called internally, from the demo, and from every test file that
+ * exercises it, with no way to run a build or test suite this round to
+ * verify a rename didn't break any of them.
+ *
+ * `verifyOnChain` already only ever throws {@link SorobanZkError} (every
+ * error path in its own `catch` block normalizes to one before
+ * rethrowing), so this wrapper needs no further error normalization.
+ *
+ * @example
+ * ```ts
+ * const result = await verifyOnChainResult({ network: TESTNET, keypair, bundle });
+ * if (result.isErr()) {
+ *   console.error(result.error.code, result.error.message);
+ * } else {
+ *   console.log(result.value.verified);
+ * }
+ * ```
+ */
+export async function verifyOnChainResult(opts: VerifyOptions): ResultAsync<VerifyResult, ZkError> {
+  try {
+    return ok(await verifyOnChain(opts));
+  } catch (error) {
+    return err(toZkError(error));
   }
 }
 

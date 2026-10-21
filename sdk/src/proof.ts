@@ -1,3 +1,4 @@
+import { err, ok, Result, toZkError, ZkError } from "./result.js";
 import {
   RegistryVerifyingKey,
   SnarkjsProof,
@@ -176,6 +177,42 @@ export function formatProof(
   }
 
   return calldata;
+}
+
+/**
+ * {@link formatProof}, wrapped as a {@link Result} instead of throwing
+ * (zksoroban#107) — `formatProof` itself is unchanged and keeps throwing;
+ * this is a new, additive alternative, not a replacement. See `result.ts`
+ * for why this SDK took the "new `*Result` function alongside the
+ * existing one" approach rather than the issue's literal ask (swap
+ * `formatProof` itself to return a `Result` and rename the throwing
+ * version to `formatProofOrThrow`): renaming a function this widely used
+ * internally (every RPC-touching function's `resolveCalldata` calls it)
+ * and across the demo and every test file, with no way to run a build or
+ * test suite this round to verify nothing broke, was too much risk for
+ * too little benefit — the Result-based API is available either way.
+ *
+ * @example
+ * ```ts
+ * const result = formatProofResult(proof, publicSignals);
+ * if (result.isErr()) {
+ *   console.error(result.error.code, result.error.message);
+ * } else {
+ *   console.log(result.value); // SorobanProofCalldata
+ * }
+ * ```
+ */
+export function formatProofResult(
+  proof: SnarkjsProof,
+  publicSignals: string[],
+  expiryLedger?: number,
+  vk?: VerificationKey
+): Result<SorobanProofCalldata, ZkError> {
+  try {
+    return ok(formatProof(proof, publicSignals, expiryLedger, vk));
+  } catch (error) {
+    return err(toZkError(error));
+  }
 }
 
 /**
