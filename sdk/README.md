@@ -12,6 +12,7 @@ with the contracts and circuits.
 npm test         # build + run the full suite (sdk/test/**/*.ts)
 npm run test:unit  # same thing, by its more conventional name
 npm run test:golden # golden-file CLI output check (see scripts/golden.ts)
+npm run bench     # microbenchmarks — see docs/performance.md#sdk-microbenchmarks
 ```
 
 Tests run on Node's built-in test runner (`node:test`, via `tsx`) — not

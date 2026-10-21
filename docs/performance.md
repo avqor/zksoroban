@@ -269,3 +269,69 @@ The fix: move the snarkjs load into the function body as a lazy `await import("s
 This is also why `require()` at module scope wasn't just a tree-shaking wart, but an outright bug waiting to happen for the ESM build specifically: plain `require()` doesn't exist in a real Node ESM module. Dynamic `import()` works correctly from both CJS and ESM contexts, which is what makes it the right fix here rather than only a tree-shaking one.
 
 **All of these numbers are single measurements on one machine with one Vite version — expect them to drift over time and across environments.** Re-run `vite build` yourself if you need a number to depend on.
+
+## SDK Microbenchmarks
+
+[zksoroban#38](https://github.com/yusufadeagbo/zksoroban/issues/38) asked
+for a benchmark suite so a PR changing `formatProof` or encoding logic has
+some signal on whether it regressed performance, instead of no baseline
+to compare against at all.
+
+### Two deliberate deviations from the issue's literal wording
+
+- **This file already existed** before this issue — the "Contract
+  verification cost" section above predates it by a wide margin. The
+  issue's acceptance criteria says "documented in `docs/performance.md`
+  (new file)"; this section was added to the existing file instead of
+  creating (and overwriting) a new one.
+- **Not a Vitest bench suite.** This repo's test runner is Node's built-in
+  `node:test` (via `tsx`) — see `sdk/README.md`'s Testing section —  not
+  Vitest or Jest, and Vitest isn't a dependency anywhere in this repo.
+  `sdk/scripts/bench.ts` is a plain script instead, run the same way
+  `scripts/golden.ts` already is (`npm run test:golden`): a hand-rolled
+  harness around `performance.now()` (`node:perf_hooks`), not a
+  `node:test`/Vitest suite at all. It satisfies the same functional
+  requirements the issue actually cares about — at least 3 named
+  benchmarks, at least 100 iterations each, results printed, invoked via
+  `npm run bench` — without introducing a second test framework alongside
+  the one this repo has standardized on.
+
+### What's benchmarked
+
+```sh
+cd sdk
+npm run bench
+```
+
+Three benchmarks, each with a 20-call warm-up before the timed loop:
+
+- **`poseidon(2 inputs)`** — `poseidon([1n, 2n])`, the same hash
+  `contracts/verifier`'s reference circuit uses, called directly with no
+  circuit or proof involved.
+- **`formatProof(valid proof)`** — encodes `sdk/test/fixtures.ts`'s
+  known-good `VALID_SNARKJS_PROOF`/`VALID_PUBLIC_SIGNALS` into
+  `SorobanProofCalldata`, the same fixture `sdk/test/proofEncoding.snapshot.test.ts`
+  snapshots.
+- **`verifyOnChain(mocked RPC)`** — a full `verifyOnChain` call against a
+  mocked `rpc.Server` (the same stubbing pattern `verify.unit.test.ts`
+  uses for its own unit tests), so this measures the SDK's *own*
+  transaction-building/decoding overhead, not Testnet round-trip latency,
+  which would dominate the number and tell you nothing about a change to
+  this repo's own code.
+
+### Baseline numbers
+
+**Not filled in by this PR** — these need an actual `npm run bench` run to
+populate honestly, which this round of work didn't execute (see the PR
+description). Whoever runs this next should paste the real output here:
+
+```
+poseidon(2 inputs)                <iterations> iters  <mean> ms/op  <ops/sec>
+formatProof(valid proof)          <iterations> iters  <mean> ms/op  <ops/sec>
+verifyOnChain(mocked RPC)         <iterations> iters  <mean> ms/op  <ops/sec>
+```
+
+Like every other measurement in this file, treat these as single-machine
+numbers that will drift across environments and Node versions — useful
+for *this PR's* regression check (same methodology, re-run on the same
+machine), not as an absolute performance claim.

@@ -18,6 +18,14 @@ sense.
 
 ### Added
 
+- **testing**: `npm run bench` in `sdk/` (`sdk/scripts/bench.ts`) —
+  microbenchmarks for `poseidon`, `formatProof`, and `verifyOnChain`
+  against a mocked RPC server (not a real network, which would make
+  Testnet latency dominate the number). A plain `performance.now()`
+  script rather than a Vitest bench suite — this repo's test runner is
+  Node's built-in `node:test`, and Vitest isn't a dependency anywhere in
+  this repo — invoked the same way `scripts/golden.ts` already is. See
+  [docs/performance.md](docs/performance.md#sdk-microbenchmarks) (#38).
 - **sdk**: optional `onProgress` progress callback on `generateProof`
   (`@zksoroban/sdk/browser`) and `verifyOnChain`, reporting the real
   `witness_start`/`witness_done`/`proof_start`/`proof_done` and
