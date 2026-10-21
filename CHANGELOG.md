@@ -18,6 +18,17 @@ sense.
 
 ### Added
 
+- **contracts+sdk**: `is_nullifier_used(nullifier) -> bool` on
+  `contracts/verifier` — a read-only view of the existing
+  `Nullifier(BytesN<32>)` lookup map, callable with zero fees via
+  `simulateTransaction`, so a caller can pre-check whether a proof has
+  already been used before paying fees for a submission that would be
+  rejected with `Error::AlreadyUsed`. New SDK `checkNullifier(proof, opts):
+  Promise<boolean>` derives the nullifier the same way the contract does
+  (`computeNullifier`, also newly exported standalone: `sha256` of
+  `proof_a`'s 64-byte G1 encoding) and simulates the check — a caller only
+  ever needs to supply the proof itself. See
+  [docs/architecture.md](docs/architecture.md#nullifier-reuse-check) (#27).
 - **sdk**: optional `onProgress` progress callback on `generateProof`
   (`@zksoroban/sdk/browser`) and `verifyOnChain`, reporting the real
   `witness_start`/`witness_done`/`proof_start`/`proof_done` and

@@ -1,3 +1,5 @@
+import { createHash } from "node:crypto";
+
 import {
   RegistryVerifyingKey,
   SnarkjsProof,
@@ -176,6 +178,20 @@ export function formatProof(
   }
 
   return calldata;
+}
+
+/**
+ * Derive a proof's nullifier the exact same way `contracts/verifier`'s
+ * `compute_nullifier` does on-chain (zksoroban#27, zksoroban#11):
+ * `sha256` of `proof_a`'s 64-byte BN254 G1 encoding — the same encoding
+ * {@link formatProof} produces for `calldata.proofA`, computed here
+ * directly from `proof.pi_a` so a caller doesn't need a full
+ * `publicSignals` array (irrelevant to the nullifier, which depends only
+ * on `proof_a`) just to check reuse. Used by `checkNullifier`.
+ */
+export function computeNullifier(proof: SnarkjsProof): Buffer {
+  const proofA = encodeG1(proof.pi_a, "pi_a");
+  return createHash("sha256").update(proofA).digest();
 }
 
 /**

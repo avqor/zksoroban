@@ -94,6 +94,8 @@ Public API:
 - `verifyBatchViaRegistry(opts): Promise<boolean[]>` — `contracts/registry`, batched, simulation-only
 - `estimateVerifyFee(opts): Promise<EstimateVerifyFeeResult>`
 - `getContractConfig(opts): Promise<ContractConfig>`
+- `checkNullifier(proof, opts): Promise<boolean>` — pre-check reuse via `contracts/verifier::is_nullifier_used`, simulation-only (zksoroban#27)
+- `computeNullifier(proof): Buffer` — the same `sha256(proof_a)` derivation the contract uses, exposed standalone
 - `getContractVersion(network, retry?): Promise<string>`
 - `withRetry` / `RetryOptions` — opt-in exponential-backoff retries for transient RPC failures (see below)
 
@@ -442,6 +444,22 @@ own scope explicitly excludes nullifier expiry. Unlike the old
 each one requires an actual successful pairing check against a real
 proof, submitted in a real, fee-paying transaction — the same bound
 `VerificationCount` (finding #11) already relies on.
+
+### Nullifier Reuse Check
+
+Per [zksoroban#27](https://github.com/yusufadeagbo/zksoroban/issues/27),
+`is_nullifier_used(nullifier) -> bool` reads the same
+`Nullifier(BytesN<32>)` map `verify_one` checks internally, so a caller
+can pre-check reuse — for free, via `simulateTransaction` — instead of
+submitting and paying fees for a proof `verify_proof` would reject with
+`Error::AlreadyUsed` anyway. Read-only: no auth, no storage mutated.
+
+The SDK's `checkNullifier` wraps this: it derives the nullifier from a
+`SnarkjsProof` using the exact same encode-then-sha256 steps
+`compute_nullifier`/`formatProof` do on the Rust/TS sides respectively
+(`sha256` of `proof_a`'s 64-byte G1 encoding), then simulates
+`is_nullifier_used` against it — so a caller only ever needs to supply the
+proof itself, never a hand-computed nullifier.
 
 ## Events
 

@@ -147,6 +147,17 @@ impl VerifierContract {
             .unwrap_or(0)
     }
 
+    /// Whether `nullifier` (`sha256(proof_a)` — see `compute_nullifier`'s
+    /// own doc comment) has already been accepted by a successful
+    /// `verify_proof`/`verify_batch` call (zksoroban#27). Lets a caller
+    /// pre-check reuse before submitting and paying fees for a proof that
+    /// would be rejected with `Error::AlreadyUsed`. Read-only: no auth
+    /// required, no state mutated, callable with zero fees via
+    /// `simulateTransaction` the same as `verification_count`.
+    pub fn is_nullifier_used(env: Env, nullifier: BytesN<32>) -> bool {
+        env.storage().persistent().has(&DataKey::Nullifier(nullifier))
+    }
+
     pub fn set_limits(env: Env, max_calls: u32, window_size: u32) -> Result<(), Error> {
         if window_size == 0 {
             return Err(Error::InvalidWindowSize);

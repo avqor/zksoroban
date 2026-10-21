@@ -1718,3 +1718,43 @@ fn verify_batch_rejects_call_with_no_authorization() {
 
     client.verify_batch(&caller, &Vec::new(&env));
 }
+
+// is_nullifier_used (#27).
+
+#[test]
+fn is_nullifier_used_returns_false_for_an_unused_nullifier() {
+    let (env, _admin, client) = setup(10, 100);
+    let nullifier = compute_nullifier(&env, &Bytes::from_array(&env, &VALID_PROOF_A));
+
+    assert!(!client.is_nullifier_used(&nullifier));
+}
+
+#[test]
+fn is_nullifier_used_returns_true_after_a_successful_verification() {
+    let (env, _admin, client) = setup(10, 100);
+    let caller = Address::generate(&env);
+    let nullifier = compute_nullifier(&env, &Bytes::from_array(&env, &VALID_PROOF_A));
+
+    assert!(!client.is_nullifier_used(&nullifier));
+    assert!(call_valid(&env, &client, &caller));
+    assert!(client.is_nullifier_used(&nullifier));
+}
+
+#[test]
+fn is_nullifier_used_does_not_require_authorization() {
+    // No env.mock_all_auths() here, deliberately -- a read-only view
+    // function like verification_count/get_config should never require
+    // any caller's auth, and this would panic if is_nullifier_used ever
+    // started requiring one.
+    let env = Env::default();
+    let admin = Address::generate(&env);
+    let vk = poseidon_vk(&env);
+    let contract_id = env.register(
+        VerifierContract,
+        (admin, 10u32, 100u32, vk, DEFAULT_VK_UPDATE_DELAY),
+    );
+    let client = VerifierContractClient::new(&env, &contract_id);
+    let nullifier = compute_nullifier(&env, &Bytes::from_array(&env, &VALID_PROOF_A));
+
+    assert!(!client.is_nullifier_used(&nullifier));
+}

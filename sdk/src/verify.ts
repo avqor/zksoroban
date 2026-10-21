@@ -12,7 +12,7 @@ import {
 } from "@stellar/stellar-sdk";
 
 import { withRetry } from "./retry.js";
-import { formatProof } from "./proof.js";
+import { computeNullifier, formatProof } from "./proof.js";
 import { createLogger, defaultLogger, Logger, LogHandler } from "./logger.js";
 import {
   ContractConfig,
@@ -22,6 +22,7 @@ import {
   ProofBundle,
   RetryOptions,
   RegistryBatchItem,
+  SnarkjsProof,
   SorobanProofCalldata,
   SorobanZkError,
   SorobanZkErrorCode,
@@ -964,6 +965,94 @@ export async function getContractConfig(
     }
     const classified = classifyError(error);
     logger.error("getContractConfig", "operation failed", { code: classified.code, message: classified.message });
+    throw classified;
+  }
+}
+
+// ---------------------------------------------------------------------------
+// checkNullifier — pre-check whether a proof's nullifier has already been
+// used, via contracts/verifier::is_nullifier_used, without paying fees for
+// a submission that would be rejected with Error::AlreadyUsed
+// ---------------------------------------------------------------------------
+
+/**
+ * Check whether `proof` has already been accepted by `contracts/verifier`
+ * (zksoroban#27, zksoroban#11) — derives the same nullifier
+ * `compute_nullifier` does on-chain ({@link computeNullifier}, from
+ * `proof.pi_a` alone) and simulates `is_nullifier_used` against it, so a
+ * caller can pre-check reuse before submitting and paying fees for a
+ * transaction `verify_proof` would reject anyway.
+ *
+ * Like {@link getContractConfig}, this is simulation-only: no transaction
+ * is submitted, no fee is charged, and no `keypair` is required.
+ *
+ * @example
+ * ```ts
+ * if (await checkNullifier(proof, { network: TESTNET })) {
+ *   console.log("already used — don't bother submitting");
+ * }
+ * ```
+ */
+export async function checkNullifier(
+  proof: SnarkjsProof,
+  opts: GetContractConfigOptions
+): Promise<boolean> {
+  const logger: Logger = opts.logger ? createLogger("DEBUG", opts.logger) : defaultLogger;
+
+  try {
+    const nullifier = computeNullifier(proof);
+
+    const server = makeServer(opts.network, opts.retry);
+    logger.debug("checkNullifier", "getting network info");
+    const network = await server.getNetwork();
+    assertNetworkPassphrase(opts.network, network.passphrase);
+    const contract = new Contract(opts.network.contractId);
+
+    const ephemeral = Keypair.random();
+    let account: InstanceType<typeof import("@stellar/stellar-sdk").Account>;
+    try {
+      logger.debug("checkNullifier", "getting ephemeral account");
+      account = await server.getAccount(ephemeral.publicKey());
+    } catch {
+      account = new Account(ephemeral.publicKey(), "0");
+    }
+
+    const transaction = new TransactionBuilder(account, {
+      fee: BASE_FEE,
+      networkPassphrase: network.passphrase
+    })
+      .addOperation(contract.call("is_nullifier_used", makeBytesScVal(nullifier)))
+      .setTimeout(30)
+      .build();
+
+    logger.debug("checkNullifier", "simulating transaction");
+    const simResult = await server.simulateTransaction(transaction);
+
+    if (rpc.Api.isSimulationError(simResult)) {
+      throw new SorobanZkError(
+        `is_nullifier_used simulation failed: ${simResult.error}`,
+        SorobanZkErrorCode.CONTRACT_INVOCATION_FAILED
+      );
+    }
+
+    if (!("result" in simResult) || !simResult.result) {
+      throw new SorobanZkError(
+        "is_nullifier_used simulation returned no result",
+        SorobanZkErrorCode.CONTRACT_INVOCATION_FAILED
+      );
+    }
+
+    const used = Boolean(scValToNative(simResult.result.retval));
+    logger.info("checkNullifier", "nullifier checked", { used });
+
+    return used;
+  } catch (error) {
+    if (error instanceof SorobanZkError) {
+      logger.error("checkNullifier", "operation failed", { code: error.code, message: error.message });
+      throw error;
+    }
+    const classified = classifyError(error);
+    logger.error("checkNullifier", "operation failed", { code: classified.code, message: classified.message });
     throw classified;
   }
 }
